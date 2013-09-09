@@ -1,0 +1,22 @@
+#!/usr/bin/env perl
+# MIDI::ALSA basic experiment 1
+
+use Modern::Perl;
+use constant::boolean;
+# !!!!!!use constant::boolean;
+use Data::Dumper;
+use Carp;
+# !!!!!!use Switch;
+# !!!!!!use Readonly;
+# !!!!!!use File::Basename;
+
+use MIDI_EventStream;
+use AppConfiguration;
+
+my $app = AppConfiguration->new(verbose => (defined $ENV{VERBOSE}));
+$app->debug();
+my $stream = $app->midi_stream();
+
+say "starting ", $app->program_name();
+say "app verbose: ", ($app->verbose()? 'yes': 'no');
+$stream->process();
