@@ -8,6 +8,7 @@ use constant::boolean;
 use feature 'state';
 use Data::Dumper;
 use Switch; #!!!!!!remove if switch statement goes away!!!!
+use MIDI_EventFilter;
 
 with 'MIDI_Facilities';
 
@@ -26,10 +27,10 @@ has destination_ports => (
 # Print debugging/tracing information?
 has config => (
     is      => 'ro',  # private
-    isa     => 'Object',
+    isa     => 'AppConfiguration',
 );
 
-# Event loop: input, filter, and dispatch MIDI events.
+# Prepare and then enter event loop to input, filter, and dispatch MIDI events.
 sub process {
     my ($self) = @_;
 say "verb: ", $self->config->verbose;
@@ -40,117 +41,128 @@ say "verb: ", $self->config->verbose;
         connectto(1, $port->[0], $port->[1]);
     }
 
-    $self->run_event_loop();
+    $self->_run_event_loop();
 }
 
 
 ### private
 
-sub run_event_loop {
+sub _run_event_loop {
     my ($self) = @_;
-    state $bank = [0, 0];
-    state $current_bank = [0, 0];
-    state $evcount = 0;
-    state $cmd_override = FALSE;
-    state $program_change = FALSE;
-    state $pc_top_range = FALSE;
-    state $myself;
+# !!!!!not used - remove:    my $bank = [0, 0];
+    my $current_bank = [0, 0];
+    my $evcount = 0;
+    my $cmd_override = FALSE;
+    my $program_change = FALSE;
+    my $pc_top_range = FALSE;
+    my $myself;
 
     say "ctlr: " . SND_SEQ_EVENT_CONTROLLER();
     say "chnlvol: " . $MIDI_Facilities::CHANNEL_VOLUME;
 
     my $destinations = $self->destination_ports;
+    my $filter = MIDI_EventFilter->new();
+    while (0) { # !!!!reminder: when ready: 0 -> 1
+        $filter->retrieve_next_event();
+# !!!design choice 1:
+#        my $event = $filter->current_event();
+#        $event->dispatch();
+# !!!design choice 2:
+        $filter->dispatch_current_event();
+    }
+
+exit 0; #!!!!!!!!!!!!!!!!!!!
 # !!!!!!!!!!!refactoring needed!!!!!!!!!!!!!
-while (1) {
-    my @alsaevent = input();
-    ++$evcount;
-    my ($type, $flags, $tag, $queue, $time, $source, $destination,
-        $data) = @alsaevent;
-    if (not defined $myself) {
-        $myself = $destination;
-    }
-    my $repl_data = $data;
-    switch ($type) {
-        case [SND_SEQ_EVENT_NOTEON(), SND_SEQ_EVENT_NOTEOFF()] {
-            my ($channel, $pitch, $velocity, undef, $duration) = @$data;
-say "got note " . ($velocity == 0? 'OFF ': 'ON ') .
-"event [$evcount]: " . Dumper(\@alsaevent) if $self->config->verbose;
-            my $note = Music::Note->new($pitch, 'midinum');
-say "note: " . $note->format('ISO') if $self->config->verbose;
-say "source, dest: " . Dumper($source) . ", " .
-Dumper($destination) if $self->config->verbose;
-            if ($cmd_override and $pitch >= $MIDI_Facilities::CTL_START) {
-                if ($velocity == 0) {   # NOTE-OFF
-                    $cmd_override = FALSE;
-                    if ($pitch == $MIDI_Facilities::C8 or
-                            $pitch == $MIDI_Facilities::B7) {
-                        $program_change = TRUE;
-                        if ($pitch == $MIDI_Facilities::B7) {
-                            $pc_top_range = TRUE;
+    while (1) {
+        my @alsaevent = input();
+        ++$evcount;
+        my ($type, $flags, $tag, $queue, $time, $source, $destination,
+            $data) = @alsaevent;
+        if (not defined $myself) {
+            $myself = $destination;
+        }
+        my $repl_data = $data;
+        switch ($type) {
+            case [SND_SEQ_EVENT_NOTEON(), SND_SEQ_EVENT_NOTEOFF()] {
+                my ($channel, $pitch, $velocity, undef, $duration) = @$data;
+    say "got note " . ($velocity == 0? 'OFF ': 'ON ') .
+    "event [$evcount]: " . Dumper(\@alsaevent) if $self->config->verbose;
+                my $note = Music::Note->new($pitch, 'midinum');
+    say "note: " . $note->format('ISO') if $self->config->verbose;
+    say "source, dest: " . Dumper($source) . ", " .
+    Dumper($destination) if $self->config->verbose;
+                if ($cmd_override and $pitch >= $MIDI_Facilities::CTL_START) {
+                    if ($velocity == 0) {   # NOTE-OFF
+                        $cmd_override = FALSE;
+                        if ($pitch == $MIDI_Facilities::C8 or
+                                $pitch == $MIDI_Facilities::B7) {
+                            $program_change = TRUE;
+                            if ($pitch == $MIDI_Facilities::B7) {
+                                $pc_top_range = TRUE;
+                            }
+                        } elsif ($pitch == $MIDI_Facilities::Bb7) {
+                            $current_bank = $self->change_bank_select(TRUE, $current_bank,
+                                \@alsaevent, $myself, $destinations);
+                        } elsif ($pitch == $MIDI_Facilities::A7) {
+                            $current_bank = $self->change_bank_select(FALSE, $current_bank,
+                                \@alsaevent, $myself, $destinations);
                         }
-                    } elsif ($pitch == $MIDI_Facilities::Bb7) {
-                        $current_bank = $self->change_bank_select(TRUE, $current_bank,
-                            \@alsaevent, $myself, $destinations);
-                    } elsif ($pitch == $MIDI_Facilities::A7) {
-                        $current_bank = $self->change_bank_select(FALSE, $current_bank,
-                            \@alsaevent, $myself, $destinations);
-                    }
-                } else {
-                    # $velocity != 0: NOTE-ON
-                    # no-op when $cmd_override - i.e., throw the event away.
-                }
-            } elsif ($program_change) {
-                if ($velocity == 0) {   # NOTE-OFF
-                    # (program change was signalled with the previous event.)
-                    $program_change = FALSE;
-                    my $program = $pitch; # i.e., note-on pitch -> new program#
-                    if (not $pc_top_range) {
-                        $program -= $MIDI_Facilities::LOWEST_88KEY_PITCH;  # e.g., 21 => 0
                     } else {
-                        $program += (127 - $MIDI_Facilities::HIGHEST_88KEY_PITCH); # 108 => 127
+                        # $velocity != 0: NOTE-ON
+                        # no-op when $cmd_override - i.e., throw the event away.
                     }
-                    $pc_top_range = FALSE;
-                    $self->change_program($flags, $tag, $queue, $time, $myself,
-                        $destinations, [$channel, 0, 0, 0, 0, $program]);
+                } elsif ($program_change) {
+                    if ($velocity == 0) {   # NOTE-OFF
+                        # (program change was signalled with the previous event.)
+                        $program_change = FALSE;
+                        my $program = $pitch; # i.e., note-on pitch -> new program#
+                        if (not $pc_top_range) {
+                            $program -= $MIDI_Facilities::LOWEST_88KEY_PITCH;  # e.g., 21 => 0
+                        } else {
+                            $program += (127 - $MIDI_Facilities::HIGHEST_88KEY_PITCH); # 108 => 127
+                        }
+                        $pc_top_range = FALSE;
+                        $self->change_program($flags, $tag, $queue, $time, $myself,
+                            $destinations, [$channel, 0, 0, 0, 0, $program]);
+                    } else {
+                        # $velocity != 0: NOTE-ON
+                        # no-op when $program_change - i.e., throw the event away.
+                    }
                 } else {
-                    # $velocity != 0: NOTE-ON
-                    # no-op when $program_change - i.e., throw the event away.
-                }
-            } else {
-                # Pass on the received note event.
-                for my $dest (@$destinations) {
-                    output($type, $flags, $tag, $queue, $time, $myself,
-                        $dest, $repl_data);
+                    # Pass on the received note event.
+                    for my $dest (@$destinations) {
+                        output($type, $flags, $tag, $queue, $time, $myself,
+                            $dest, $repl_data);
+                    }
                 }
             }
-        }
-        case SND_SEQ_EVENT_CONTROLLER() {
-say STDERR "got a control change event [$evcount]: " .
-Dumper(\@alsaevent) if $self->config->verbose;
-            my ($channel, undef, undef, undef, $param, $value) = @$data;
-            if ($param == $MIDI_Facilities::CHANNEL_VOLUME) {
-                # control-change/channel-volume is (for now, at least)
-                # hard-coded to signal a change to command-override status.
-                $cmd_override = TRUE;
-            } else {
-                for my $dest (@$destinations) {
-                    # Pass on the received control change message.
-                    output($type, $flags, $tag, $queue, $time, $myself,
-                        $dest, $repl_data);
+            case SND_SEQ_EVENT_CONTROLLER() {
+    say STDERR "got a control change event [$evcount]: " .
+    Dumper(\@alsaevent) if $self->config->verbose;
+                my ($channel, undef, undef, undef, $param, $value) = @$data;
+                if ($param == $MIDI_Facilities::CHANNEL_VOLUME) {
+                    # control-change/channel-volume is (for now, at least)
+                    # hard-coded to signal a change to command-override status.
+                    $cmd_override = TRUE;
+                } else {
+                    for my $dest (@$destinations) {
+                        # Pass on the received control change message.
+                        output($type, $flags, $tag, $queue, $time, $myself,
+                            $dest, $repl_data);
+                    }
                 }
             }
-        }
-        else {
-say STDERR "got some other event [$evcount]: " .
-Dumper(\@alsaevent) if $self->config->verbose;
-                for my $dest (@$destinations) {
-                    # Pass on the received event/message.
-                    output($type, $flags, $tag, $queue, $time, $myself,
-                        $dest, $repl_data);
-                }
+            else {
+    say STDERR "got some other event [$evcount]: " .
+    Dumper(\@alsaevent) if $self->config->verbose;
+                    for my $dest (@$destinations) {
+                        # Pass on the received event/message.
+                        output($type, $flags, $tag, $queue, $time, $myself,
+                            $dest, $repl_data);
+                    }
+            }
         }
     }
-}
 }
 
 ####################
