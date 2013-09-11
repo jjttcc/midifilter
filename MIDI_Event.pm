@@ -1,8 +1,10 @@
 package MIDI_Event;
-# Self-dispatching MIDI events
+# Self-dispatching ALSA-MIDI events, dispatched according to the class type
+# (subtype)
 
 use Mouse;
 use Modern::Perl;
+use Carp;
 
 with 'MIDI_Facilities';
 
@@ -10,41 +12,41 @@ with 'MIDI_Facilities';
 
 no warnings qw(once);
 
-# ALSA-MIDI event type
+# event type
 sub type {
     my ($self) = @_;
-    $self->event_data->[$MIDI_Facilities::TYPE];
+    $self->event_data->[TYPE()];
 }
 
-# ALSA-MIDI event flags
+# event flags
 sub flags {
     my ($self) = @_;
-    $self->event_data->[$MIDI_Facilities::FLAGS];
+    $self->event_data->[FLAGS()];
 }
 
 no warnings qw(once);
-# ALSA-MIDI event time stamp
+# event time stamp
 sub time {
     my ($self) = @_;
-    $self->event_data->[$MIDI_Facilities::TIME];
+    $self->event_data->[TIME()];
 }
 
-# ALSA-MIDI event source
+# event source
 sub source {
     my ($self) = @_;
-    $self->event_data->[$MIDI_Facilities::SOURCE];
+    $self->event_data->[SOURCE()];
 }
 
-# ALSA-MIDI event destination
+# event destination
 sub destination {
     my ($self) = @_;
-    $self->event_data->[$MIDI_Facilities::DEST];
+    $self->event_data->[DEST()];
 }
 
-# ALSA-MIDI event data
+# MIDI-specific data
 sub data {
     my ($self) = @_;
-    $self->event_data->[$MIDI_Facilities::DATA];
+    $self->event_data->[DATA()];
 }
 
 
@@ -54,9 +56,8 @@ sub data {
 # new/constructor method, it will self-initialize by calling
 # MIDI::ALSA::input.
 has event_data => (
-    is => 'ro',
+    is => 'rw',
     isa => 'ArrayRef',
-    writer => '_set_event_data',
 );
 
 # reference to array of destinations to which the event is to be sent
@@ -70,6 +71,9 @@ has destinations => (
 sub dispatch {
     my ($self) = @_;
 
+    die "abstract method needs to be implemented in ", ref $self;
+=cut=
+###### !!!!!!obsolete
     my ($type, $flags, $tag, $queue, $time, $source, $destination, $data) =
             @{$self->event_data};
     my $repl_data = $data;
@@ -78,13 +82,18 @@ sub dispatch {
         output($type, $flags, $tag, $queue, $time, $output_source,
             $dest, $repl_data);
     }
+=cut=
 }
 
 ### private
 
 sub BUILD {
     my ($self) = @_;
-    die "Instantiation of abstract class [" . $self . "]";
+
+    if (ref $self eq 'MIDI_Event') {
+        confess "Instantiation of abstract class [" . $self . "]";
+    }
+say "I've been built! [", ref $self, ']';
 }
 
 # construction helper
@@ -93,7 +102,7 @@ sub old_BUILD {
     if (not defined $self->event_data) {
         # 'event_data' was not passed to 'new', so build it here.
         my @event_data = input();
-        $self->_set_event_data(\@event_data);
+        $self->set_event_data(\@event_data);
     }
 }
 

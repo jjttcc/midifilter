@@ -5,29 +5,88 @@ use Mouse;
 use Modern::Perl;
 use constant::boolean;
 use MIDI_Event;
-use MIDI_EventDispatcher;
+use Readonly;
+use Normal_MIDI_Event;
+use Overriding_MIDI_Event;
+use ProgramChange_MIDI_Event;
+
+# !!!!!!!!!!Clean this up, please!!!!!!!!!!!!!:
+#NOTEON     => $MIDI_Facilities::SND_SEQ_EVENT_NOTEON,
+#NOTEOFF    => $MIDI_Facilities::SND_SEQ_EVENT_NOTEOFF,
+#CONTROLLER => $MIDI_Facilities::SND_SEQ_EVENT_CONTROLLER,
+#sub NOTEON() { $MIDI_Facilities::SND_SEQ_EVENT_NOTEON }
+#sub NOTEOFF() { $MIDI_Facilities::SND_SEQ_EVENT_NOTEOFF }
+#sub CONTROLLER() { $MIDI_Facilities::SND_SEQ_EVENT_CONTROLLER }
+
 
 with 'MIDI_Facilities';
 
+#####  Public interface
 
-### public
+###  Constants
+
+# Event-filtering processing states
+Readonly::Scalar our $NORMAL         => 0;  # Next event to be output as is
+Readonly::Scalar our $OVERRIDE       => 1;  # Command override state
+Readonly::Scalar our $PROGRAM_CHANGE => 2;  # Program change to be sent
+
+###  Access
 
 has current_event => (
     is       => 'ro',
-    isa      => 'MIDI_Event',
-    default  => sub { MIDI_Event->new(); }, # initialize with dummy object
+    isa      => 'Maybe[MIDI_Event]',
+# !!!!rm: default  => sub { MIDI_Event->new(); }, # initialize with dummy object
     init_arg => undef,   # Not allowed in 'new' method.
     writer   => '_set_current_event',
 );
 
-# set of event dispatchers used to route the current event
-has _dispatchers => (
-    is      => 'ro',
-    isa     => 'HashRef[MIDI_EventDispatcher]',
-    writer  => '_set_dispatchers',
+# Current MIDI-event processing state
+has state => (
+    is       => 'ro',
+    isa      => 'Int',
+    default  => sub { $NORMAL; },
+    init_arg => undef,   # Not allowed in 'new' method.
+# !!!    writer   => '_set_state',
 );
 
+my $event_count = 0;
 
+# Input the next, pending, event and according its type and the current state,
+# dispatch (i.e., output, change state, or etc.) the event appropriately.
+sub dispatch_next_event {
+    my ($self) = @_;
+# !!!!
+    my $current_bank = [0, 0];
+    my $cmd_override = FALSE;
+    my $program_change = FALSE;
+    my $pc_top_range = FALSE;
+    my $myself;
+
+    my @alsa_event = input();
+    ++$event_count;
+    my $type = $alsa_event[TYPE()];
+say "non: ", NOTEON();
+say "nooff: ", NOTEOFF();
+say "cntrl ", CONTROLLER();
+    if ($type == NOTEON() or $type == NOTEOFF()) {
+#        my $data = $alsa_event[DATA()];
+#        my ($channel, $pitch, $velocity, undef, undef) = @$data;
+        my $event = $self->_midi_event_map->{$self->state()};
+        $event->dispatch();
+say "AAAAAAAAAA";
+# $self->_midi_event_map->{$self->state()}->dispatch(\@alsa_event);
+    } elsif ($type == CONTROLLER()) {
+        #xxx
+say "BBBBBBBBBB";
+    } else {
+        #yyy
+say "CCCCCCCCCC";
+    }
+#    SND_SEQ_EVENT_PGMCHANGE
+#    SND_SEQ_EVENT_CONTROLLER
+}
+
+# !!!!Likely to be obsoleted/removed
 # Obtain the next MIDI event
 sub retrieve_next_event {
     my ($self) = @_;
@@ -35,12 +94,12 @@ sub retrieve_next_event {
 }
 
 
+# !!!!Likely to be obsoleted/removed
 # Dispatch the current event according to its type, value, etc.
 sub dispatch_current_event {
     my ($self) = @_;
 # !!!!
     my $current_bank = [0, 0];
-    my $evcount = 0;
     my $cmd_override = FALSE;
     my $program_change = FALSE;
     my $pc_top_range = FALSE;
@@ -50,13 +109,23 @@ sub dispatch_current_event {
 }
 
 
-### private
+#####  Implementation
 
 sub BUILD {
     my ($self) = @_;
-# !!!!!dummy:
-    $self->_set_dispatchers({1, MIDI_EventDispatcher->new()});
+say "MIDI_EventFilter::BUILD called";
+    my $midimap = $self->_midi_event_map;
+    $midimap->{$NORMAL} = Normal_MIDI_Event->new();
+    $midimap->{$OVERRIDE} = Overriding_MIDI_Event->new();
+    $midimap->{$PROGRAM_CHANGE} = ProgramChange_MIDI_Event->new();
 }
+
+# map of MIDI_Event subtype instances: processing-state -> appropriate subtype
+has _midi_event_map => (
+    is      => 'ro',
+    isa     => 'HashRef[MIDI_Event]',
+    default => sub { {} },  # Initialized to empty hash reference.
+);
 
 =cut=
     while (1) {

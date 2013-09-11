@@ -55,6 +55,7 @@ has destination_ports => (
 sub BUILD {
     my ($self) = @_;
     my ($sources, $dests) = _alsa_ports(\@ARGV);
+say '$sources, $dests: ', Dumper($sources, $dests);
     $self->_set_source_ports($sources);
     $self->_set_destination_ports($dests);
     $self->_set_midi_stream(MIDI_EventStream->new(
@@ -79,6 +80,7 @@ sub _alsa_ports {
     my ($files) = @_;
     my @result = ([], []);
     use IO::File;
+say "_alsa_ports - files: ", Dumper($files);
     Readonly::Scalar my $FROM => 0;
     Readonly::Scalar my $TO   => 1;
 

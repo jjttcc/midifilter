@@ -34,11 +34,14 @@ has config => (
 sub process {
     my ($self) = @_;
 say "verb: ", $self->config->verbose;
+say "srcprts: ", Dumper(@{$self->source_ports});
     for my $port (@{$self->source_ports}) {
         connectfrom(1, $port->[0], $port->[1]);
+say 'connectfrom(1, ', $port->[0], ', ', $port->[1], ')';
     }
     for my $port (@{$self->destination_ports}) {
         connectto(1, $port->[0], $port->[1]);
+say 'connectto(1, ', $port->[0], ', ', $port->[1], ')';
     }
 
     $self->_run_event_loop();
@@ -57,18 +60,20 @@ sub _run_event_loop {
     my $pc_top_range = FALSE;
     my $myself;
 
-    say "ctlr: " . SND_SEQ_EVENT_CONTROLLER();
-    say "chnlvol: " . $MIDI_Facilities::CHANNEL_VOLUME;
+say "ctlr: " . SND_SEQ_EVENT_CONTROLLER();  #!!!!
+say "chnlvol: " . CHANNEL_VOLUME();         #!!!!
 
     my $destinations = $self->destination_ports;
     my $filter = MIDI_EventFilter->new();
-    while (0) { # !!!!reminder: when ready: 0 -> 1
-        $filter->retrieve_next_event();
+    while (1) { # !!!!reminder: when ready: 0 -> 1
 # !!!design choice 1:
 #        my $event = $filter->current_event();
 #        $event->dispatch();
 # !!!design choice 2:
-        $filter->dispatch_current_event();
+#        $filter->retrieve_next_event();
+#        $filter->dispatch_current_event();
+# !!!design choice 3:
+        $filter->dispatch_next_event();
     }
 
 exit 0; #!!!!!!!!!!!!!!!!!!!
