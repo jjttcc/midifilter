@@ -1,5 +1,5 @@
 package MIDI_Event;
-# MIDI events
+# Self-dispatching MIDI events
 
 use Mouse;
 use Modern::Perl;
@@ -82,8 +82,13 @@ sub dispatch {
 
 ### private
 
-# construction helper
 sub BUILD {
+    my ($self) = @_;
+    die "Instantiation of abstract class [" . $self . "]";
+}
+
+# construction helper
+sub old_BUILD {
     my ($self) = @_;
     if (not defined $self->event_data) {
         # 'event_data' was not passed to 'new', so build it here.
