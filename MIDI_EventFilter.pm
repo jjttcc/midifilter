@@ -3,8 +3,9 @@ package MIDI_EventFilter;
 
 use Mouse;
 use Modern::Perl;
-use MIDI_Event;
 use constant::boolean;
+use MIDI_Event;
+use MIDI_EventDispatcher;
 
 with 'MIDI_Facilities';
 
@@ -18,6 +19,14 @@ has current_event => (
     init_arg => undef,   # Not allowed in 'new' method.
     writer   => '_set_current_event',
 );
+
+# set of event dispatchers used to route the current event
+has _dispatchers => (
+    is      => 'ro',
+    isa     => 'HashRef[MIDI_EventDispatcher]',
+    writer  => '_set_dispatchers',
+);
+
 
 # Obtain the next MIDI event
 sub retrieve_next_event {
@@ -42,6 +51,12 @@ sub dispatch_current_event {
 
 
 ### private
+
+sub BUILD {
+    my ($self) = @_;
+# !!!!!dummy:
+    $self->_set_dispatchers({1, MIDI_EventDispatcher->new()});
+}
 
 =cut=
     while (1) {
