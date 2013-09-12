@@ -5,12 +5,12 @@ package MIDI_Event;
 use Mouse;
 use Modern::Perl;
 use Carp;
+use feature 'state';
+use Data::Dumper;
 
 with 'MIDI_Facilities';
 
-### public
-
-no warnings qw(once);
+#####  Public interface
 
 # event type
 sub type {
@@ -72,20 +72,9 @@ sub dispatch {
     my ($self) = @_;
 
     die "abstract method needs to be implemented in ", ref $self;
-=cut=
-###### !!!!!!obsolete
-    my ($type, $flags, $tag, $queue, $time, $source, $destination, $data) =
-            @{$self->event_data};
-    my $repl_data = $data;
-    my $output_source = $destination;
-    for my $dest (@{$self->destinations}) {
-        output($type, $flags, $tag, $queue, $time, $output_source,
-            $dest, $repl_data);
-    }
-=cut=
 }
 
-### private
+#####  Implementation
 
 sub BUILD {
     my ($self) = @_;
@@ -96,16 +85,23 @@ sub BUILD {
 say "I've been built! [", ref $self, ']';
 }
 
-# construction helper
-sub old_BUILD {
+# Send 'event_data', as is, to 'destinations'.
+sub _send_output {
     my ($self) = @_;
-    if (not defined $self->event_data) {
-        # 'event_data' was not passed to 'new', so build it here.
-        my @event_data = input();
-        $self->set_event_data(\@event_data);
+say "MIDI_Event::_send_output: self: ", Dumper($self);
+    # (Optimization: set @destinations only once:)
+    my $destinations = $self->destinations;
+    # myself -> source for output calls - not expected to change:
+    state $myself = $self->destination();
+    state $queue = undef;
+    state $time = 0;
+    # (Assume: queue, time, source, destination [the undefs] are not needed:)
+    my ($type, $flags, $tag, undef, undef, undef, undef, $data) =
+        @{$self->event_data};
+    for my $dest (@$destinations) {
+        # Pass on the received event/message.
+        output($type, $flags, $tag, $queue, $time, $myself, $dest, $data);
     }
 }
-
-
 1;
 

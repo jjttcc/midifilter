@@ -4,13 +4,14 @@ package AppConfiguration;
 use Mouse;
 use Modern::Perl;
 use constant::boolean;
-use File::Basename;
+use File::Basename qw(basename);
 use Readonly;
 use Carp;
 use Data::Dumper;
 
+extends 'MIDI_Configuration';
 
-### public
+#####  Public interface
 
 # MIDI event stream
 has midi_stream => (
@@ -50,12 +51,13 @@ has destination_ports => (
 );
 
 
-### private
+#####  Implementation
 
 sub BUILD {
     my ($self) = @_;
     my ($sources, $dests) = _alsa_ports(\@ARGV);
 say '$sources, $dests: ', Dumper($sources, $dests);
+say "my name is ", $self->program_name;
     $self->_set_source_ports($sources);
     $self->_set_destination_ports($dests);
     $self->_set_midi_stream(MIDI_EventStream->new(
@@ -70,8 +72,8 @@ say '$sources, $dests: ', Dumper($sources, $dests);
 
 sub debug {
     my ($self) = @_;
-say "!!!!DEBUG: sources: " . Dumper($self->source_ports());
-say "!!!!DEBUG: destinations: " . Dumper($self->destination_ports());
+say "DEBUG: sources: " . Dumper($self->source_ports());
+say "DEBUG: destinations: " . Dumper($self->destination_ports());
 }
 
 # ALSA source and destination ports (array with two members, each of which is
@@ -79,7 +81,7 @@ say "!!!!DEBUG: destinations: " . Dumper($self->destination_ports());
 sub _alsa_ports {
     my ($files) = @_;
     my @result = ([], []);
-    use IO::File;
+    use IO::File qw();
 say "_alsa_ports - files: ", Dumper($files);
     Readonly::Scalar my $FROM => 0;
     Readonly::Scalar my $TO   => 1;

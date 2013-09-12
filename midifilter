@@ -3,12 +3,8 @@
 
 use Modern::Perl;
 use constant::boolean;
-# !!!!!!use constant::boolean;
 use Data::Dumper;
 use Carp;
-# !!!!!!use Switch;
-# !!!!!!use Readonly;
-# !!!!!!use File::Basename;
 
 use MIDI_EventStream;
 use AppConfiguration;
