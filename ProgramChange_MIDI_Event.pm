@@ -1,5 +1,6 @@
 package ProgramChange_MIDI_Event;
-# MIDI events to be output as program change events
+# MIDI events to be (after appropriate self-modification) output as
+# program change events
 
 use Mouse;
 use Modern::Perl;

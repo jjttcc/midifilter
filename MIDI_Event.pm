@@ -87,16 +87,18 @@ say "I've been built! [", ref $self, ']';
 # Send 'event_data', as is, to 'destinations'.
 sub _send_output {
     my ($self) = @_;
-say "MIDI_Event::_send_output: self: ", Dumper($self);
+say "MIDI_Event::_send_output [for ", ref $self, "]: self: ", Dumper($self);
     # (Optimization: set @destinations only once:)
     state $destinations = $self->destinations;
     # myself -> source for output calls - not expected to change:
     state $myself = $self->destination();
     state $queue = undef;
     state $time = 0;
-    # (Assume: queue, time, source, destination [the undefs] are not needed:)
+    # (Assume: queue, time, source, destination [undefs] are not needed:)
     my ($type, $flags, $tag, undef, undef, undef, undef, $data) =
         @{$self->event_data};
+if (defined $data->[PITCH()] and $data->[PITCH()] == 21) { #!!!!
+exit $data->[PITCH()]; } #!!!!!!
     for my $dest (@$destinations) {
         # Pass on the received event/message.
         output($type, $flags, $tag, $queue, $time, $myself, $dest, $data);

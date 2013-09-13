@@ -1,4 +1,6 @@
 *.sw[op]
 *.pl
 *.pmc
+*.wk*
 tags
+hide

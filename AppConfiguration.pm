@@ -24,14 +24,7 @@ has midi_stream => (
 has program_name => (
     is      => 'ro',
     isa     => 'Str',
-    default => sub { basename($0); }
-);
-
-# Print debugging/tracing information?
-has verbose => (
-    is      => 'ro',
-    isa     => 'Bool',
-    default => sub { FALSE; }
+    default => sub { MIDI_Configuration::application_name(); }
 );
 
 # ALSA MIDI ports from which to connect for input

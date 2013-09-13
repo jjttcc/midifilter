@@ -1,5 +1,7 @@
 package Normal_MIDI_Event;
 # MIDI events to be handled normally - i.e., output without modification
+###!!! Is a better name: Static_MIDI_Event (i.e., it will not be modified
+###!!! before being sent)?
 
 use Mouse;
 use Modern::Perl;

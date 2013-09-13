@@ -52,30 +52,38 @@ has state => (
 ### Utility routines
 
 ##[Notes: For now, if override, don't bother to check: $pitch >= CTL_START.
-# Lower pitches will be discarded.  (It might make sense to always do this.)
+# Lower pitches will be discarded.  (It might make sense to always do this.)]
+
 # Based on the current state and $alsa_event (the last ALSA-MIDI event
 # received), change the state and take any other appropriate actions.
+# Returns the resulting state transition, as a string.
 sub execute_state_change {
     my ($self, $alsa_event) = @_;
 
     my $old_state = $self->state;
+    my $new_state = $old_state;
     my $type = $alsa_event->[TYPE()];
     if ($old_state == OVERRIDE()) {
         if ($type == NOTEON() or $type == NOTEOFF()) {
             my $data = $alsa_event->[DATA()];
             my (undef, $pitch, $velocity, undef, undef) = @$data;
-            if ($velocity == 0) {   # NOTE-OFF
+            if ($type == NOTEOFF() or $velocity == 0) {   # NOTE-OFF
                 if ($PC_pitch->{$pitch}) {
-                    $self->_set_state(PROGRAM_CHANGE());
+                    $new_state = PROGRAM_CHANGE();
                 } elsif ($BNKSL_pitch->{$pitch}) {
-                    $self->_set_state(BANK_SELECT());
+                    $new_state = BANK_SELECT();
                 }
             } else {
                 # no-op: Discard NOTE-ON event.
             }
         }
     }
+# !!!Note: as source (old) state, treat BANK_SELECT the same as NORMAL.
     if (DEBUG()) { check_state_change($old_state, $self->state); }
+    if ($new_state != $old_state) {
+        $self->_set_state($new_state);
+    }
+    "$old_state->$new_state";
 }
 
 ##[Notes: For now, if override, don't bother to check: $pitch >= CTL_START.

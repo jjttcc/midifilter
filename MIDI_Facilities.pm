@@ -3,7 +3,6 @@ package MIDI_Facilities;
 
 use Filter::Macro;  # 'use MIDI_Facilities' provides inline expansion.
 use Modern::Perl;
-use Readonly;
 
 use Music::Note;
 use MIDI::ALSA qw(
@@ -25,33 +24,46 @@ use MIDI::ALSA qw(
 ###  Constants
 
 # Convenience constants for important MIDI event types for state transition
-sub NOTEON() { SND_SEQ_EVENT_NOTEON() }
-sub NOTEOFF() { SND_SEQ_EVENT_NOTEOFF() }
+sub NOTEON()     { SND_SEQ_EVENT_NOTEON()     }
+sub NOTEOFF()    { SND_SEQ_EVENT_NOTEOFF()    }
 sub CONTROLLER() { SND_SEQ_EVENT_CONTROLLER() }
+sub PGMCHANGE()  { SND_SEQ_EVENT_PGMCHANGE()  }
 
-# Constants: parameter/sub-message types, MIDI pitches, etc.
-sub BANKMSB_SELECT() { 0 }
-sub BANKLSB_SELECT() { 32 }
-sub CHANNEL_VOLUME() { 7 }
-sub C8() { 108 }
-sub B7() { 107 }
-sub Bb7() { 106 }
-sub A7() { 105 }
+# parameter/sub-message types, MIDI pitches, etc.
+sub BANKMSB_SELECT()      { 0 }
+sub BANKLSB_SELECT()      { 32 }
+sub CHANNEL_VOLUME()      { 7 }
+sub C8()                  { 108 }
+sub B7()                  { 107 }
+sub Bb7()                 { 106 }
+sub A7()                  { 105 }
 # lowest MIDI pitch value used for event override control:
-sub CTL_START() { A7() }
-sub LOWEST_88KEY_PITCH() { 21 }     # Bottom A on keyboard
+sub CTL_START()           { A7() }
+sub LOWEST_88KEY_PITCH()  { 21 }     # Bottom A on keyboard
 sub HIGHEST_88KEY_PITCH() { 108 }   # Top C on keyboard
 
-# Constants: ALSA MIDI event-data components - array position
-sub TYPE() { 0 }
-sub FLAGS() { 1 }
-sub TAG() { 2 }
-sub QUEUE() { 3 }
-sub TIME() { 4 }
+# ALSA MIDI event-data components - array position
+sub TYPE()   { 0 }
+sub FLAGS()  { 1 }
+sub TAG()    { 2 }
+sub QUEUE()  { 3 }
+sub TIME()   { 4 }
 sub SOURCE() { 5 }
-sub DEST() { 6 }
-sub DATA() { 7 }
+sub DEST()   { 6 }
+sub DATA()   { 7 }
 
+# ALSA MIDI MIDI-data NOTE-ON/NOTE-OFF components - array position
+sub PITCH()    { 1 }     # (channel is 0 - see below)
+sub VELOCITY() { 2 }
+sub DURATION() { 4 }  # Note: position 3 is unused.
+# ALSA MIDI MIDI-data generic event (non-note-event) components - array position
+sub CHANNEL()  { 0 }
+sub PARAM()    { 4 } # Note: positions 1, 2, 3 are unused.
+sub VALUE()    { 5 }
+
+# For bank-select: The pitch value that indicates decrementing of bank-select
+# value
+sub DOWN_PITCH() { A7() }
 
 1;
 
