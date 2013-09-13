@@ -8,7 +8,7 @@ use constant::boolean;
 use Data::Dumper;
 use MIDI_EventFilter;
 
-with 'MIDI_Facilities';
+use MIDI_Facilities;
 
 # Configuration data
 has config => (

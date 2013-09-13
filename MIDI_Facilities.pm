@@ -1,7 +1,7 @@
 package MIDI_Facilities;
 # MIDI-related constants, utilities, etc.
 
-use Mouse::Role;
+use Filter::Macro;  # 'use MIDI_Facilities' provides inline expansion.
 use Modern::Perl;
 use Readonly;
 
@@ -25,9 +25,9 @@ use MIDI::ALSA qw(
 ###  Constants
 
 # Convenience constants for important MIDI event types for state transition
-sub NOTEON() { SND_SEQ_EVENT_NOTEON }
-sub NOTEOFF() { SND_SEQ_EVENT_NOTEOFF }
-sub CONTROLLER() { SND_SEQ_EVENT_CONTROLLER }
+sub NOTEON() { SND_SEQ_EVENT_NOTEON() }
+sub NOTEOFF() { SND_SEQ_EVENT_NOTEOFF() }
+sub CONTROLLER() { SND_SEQ_EVENT_CONTROLLER() }
 
 # Constants: parameter/sub-message types, MIDI pitches, etc.
 sub BANKMSB_SELECT() { 0 }

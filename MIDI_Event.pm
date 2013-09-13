@@ -8,7 +8,7 @@ use Carp;
 use feature 'state';
 use Data::Dumper;
 
-with 'MIDI_Facilities';
+use MIDI_Facilities;
 
 #####  Public interface
 
@@ -48,7 +48,6 @@ sub data {
     my ($self) = @_;
     $self->event_data->[DATA()];
 }
-
 
 # MIDI event components - reference to an array whose contents are the same
 # (same order, same meaning) as that documented as the return value of
@@ -90,7 +89,7 @@ sub _send_output {
     my ($self) = @_;
 say "MIDI_Event::_send_output: self: ", Dumper($self);
     # (Optimization: set @destinations only once:)
-    my $destinations = $self->destinations;
+    state $destinations = $self->destinations;
     # myself -> source for output calls - not expected to change:
     state $myself = $self->destination();
     state $queue = undef;
