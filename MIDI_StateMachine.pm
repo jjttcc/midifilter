@@ -83,6 +83,8 @@ sub execute_state_change {
                     $add_to_progch = $PC_add->{$pitch};
                 } elsif ($BNKSL_pitch->{$pitch}) {
                     $new_state = BANK_SELECT();
+                } else {
+                    $new_state = NORMAL();  # override mode canceled
                 }
             } else {
                 # no-op: Discard NOTE-ON event.
