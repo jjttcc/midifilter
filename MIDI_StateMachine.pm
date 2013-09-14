@@ -25,8 +25,9 @@ sub BANK_SELECT()    { 3 } # Bank select to be sent
 # valid state transitions - hash reference
 my $valid_state_transitions = {
     NORMAL()         => [OVERRIDE, NORMAL],
-    OVERRIDE()       => [OVERRIDE, PROGRAM_CHANGE, NORMAL],
-    PROGRAM_CHANGE() => [PROGRAM_CHANGE, NORMAL]
+    BANK_SELECT()    => [OVERRIDE, NORMAL],
+    OVERRIDE()       => [OVERRIDE, PROGRAM_CHANGE, NORMAL, BANK_SELECT],
+    PROGRAM_CHANGE() => [PROGRAM_CHANGE, NORMAL, OVERRIDE],
 };
 
 # !!!!!!!!!!!Do we need? (possibly not):
@@ -56,7 +57,7 @@ has state => (
 
 # Based on the current state and $alsa_event (the last ALSA-MIDI event
 # received), change the state and take any other appropriate actions.
-# Returns the resulting state transition, as a string.
+# Return the resulting state transition, as a string.
 sub execute_state_change {
     my ($self, $alsa_event) = @_;
 
@@ -79,46 +80,18 @@ sub execute_state_change {
         }
     }
 # !!!Note: as source (old) state, treat BANK_SELECT the same as NORMAL.
-    if (DEBUG()) { check_state_change($old_state, $self->state); }
+    if (DEBUG()) { _check_state_change($old_state, $self->state); }
     if ($new_state != $old_state) {
         $self->_set_state($new_state);
     }
     "$old_state->$new_state";
 }
 
-##[Notes: For now, if override, don't bother to check: $pitch >= CTL_START.
-# Lower pitches will be discarded.  (It might make sense to always do this.)
-# The new state, based on the status of $state and $alsa_event (the last
-# ALSA-MIDI event received).
-# !!!!Possible side effects: $alsa_event components may be modified.???
-sub new_state___old {
-    my ($self, $state, $alsa_event) = @_;
 
-    my $old_state = $state;
-    my $result = $state;
-    my $type = $alsa_event->[TYPE()];
-    if ($state == OVERRIDE()) {
-        if ($type == NOTEON() or $type == NOTEOFF()) {
-            my $data = $alsa_event->[DATA()];
-            my (undef, $pitch, $velocity, undef, undef) = @$data;
-            if ($velocity == 0) {   # NOTE-OFF
-                if ($PC_pitch->{$pitch}) {
-                    $result = PROGRAM_CHANGE();
-                } elsif ($BNKSL_pitch->{$pitch}) {
-                    $result = BANK_SELECT();
-                }
-            } else {
-                # no-op: Discard NOTE-ON event.
-            }
-        }
-    }
-    if (DEBUG()) { check_state_change($old_state, $result); }
-    $result;
-}
+#####  Implementation (non-public)
 
 
-
-sub name_for_state {
+sub _name_for_state {
     my ($s) = @_;
     state $name_for = {
         NORMAL()         => 'NORMAL',
@@ -130,11 +103,11 @@ sub name_for_state {
 
 # Check transition from $state1 to $state2.  If it's invalid, die with an
 # error message.  If it's valid, return TRUE.
-sub check_state_change {
+sub _check_state_change {
 use IO::File;
     my ($state1, $state2) = @_;
     if (not defined $state1 or not defined $state2) {
-        croak "check_state_change: one or both states not defined: ",
+        croak "_check_state_change: one or both states not defined: ",
             Dumper($state1, $state2);
     }
     my $valid = FALSE;
@@ -143,8 +116,8 @@ use IO::File;
         $valid = defined first { $_ == $state2 } @$states;
     }
     if (not $valid) {
-        croak "check_state_change: invalid state transition: ",
-            name_for_state($state1), ' -> ', name_for_state($state2);
+        croak "_check_state_change: invalid state transition: ",
+            _name_for_state($state1), ' -> ', _name_for_state($state2);
     }
     $valid;
 }

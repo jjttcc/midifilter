@@ -6,7 +6,7 @@ use Modern::Perl;
 use constant::boolean;
 use Data::Dumper;
 use MIDI_Event;
-use Normal_MIDI_Event;
+use Static_MIDI_Event;
 use Overriding_MIDI_Event;
 use ProgramChange_MIDI_Event;
 use BankSelect_MIDI_Event;
@@ -18,17 +18,6 @@ use MIDI_StateMachine;
 #####  Public interface
 
 ###  Access
-
-=cut=
-# Current MIDI-event processing state
-has state => (
-    is       => 'ro',
-    isa      => 'Int',
-    default  => sub { NORMAL(); },
-    writer   => '_set_state',
-    init_arg => undef,   # Not allowed in 'new' method.
-);
-=cut=
 
 # Configuration data
 has config => (
@@ -54,6 +43,8 @@ say "state_transition: ", $state_transition;
         $event->dispatch($self);
 say "event: ", Dumper($event);
     } else {
+say "dispatch_next_event - no-op for $state_transition ",
+Dumper(@alsa_event);
         # No event for this state transition (i.e., no-op)
     }
 }
@@ -61,23 +52,45 @@ say "event: ", Dumper($event);
 
 #####  Implementation
 
+# Convenience function: "$s1->$s2"
+sub _state_tr {
+    my ($s1, $s2) = @_;
+    "$s1->$s2";
+}
+
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#   NORMAL()         => [OVERRIDE, NORMAL],
+#   BANK_SELECT()    => [OVERRIDE, NORMAL],
+#   OVERRIDE()       => [OVERRIDE, PROGRAM_CHANGE, NORMAL, BANK_SELECT],
+#   PROGRAM_CHANGE() => [PROGRAM_CHANGE, NORMAL, OVERRIDE],
 sub BUILD {
     my ($self) = @_;
     my $midimap = $self->_midi_event_map;
 say "MEF BUILD - config: ", Dumper($self->config);
-    # _midi_event_map key: state transition description [<state1>-><state2>]
-    $midimap->{PROGRAM_CHANGE() . '->' . NORMAL()} =
+    # Initialize _midi_event_map -
+    # key: state transition description [<state1>-><state2>]
+    $midimap->{_state_tr(NORMAL(), NORMAL())} = Static_MIDI_Event->new(
+            destinations => $self->config->destination_ports);
+    $midimap->{_state_tr(NORMAL(), OVERRIDE())} = undef;            # (no-op)
+    $midimap->{_state_tr(BANK_SELECT(), NORMAL())} = Static_MIDI_Event->new(
+            destinations => $self->config->destination_ports);
+    $midimap->{_state_tr(BANK_SELECT(), OVERRIDE())} = undef;       # (no-op)
+    $midimap->{_state_tr(OVERRIDE(), OVERRIDE())} = undef;          # (no-op)
+    $midimap->{_state_tr(OVERRIDE(), PROGRAM_CHANGE())} = undef;    # (no-op)
+    $midimap->{_state_tr(OVERRIDE(), NORMAL())} = undef;            # (no-op)
+    $midimap->{_state_tr(OVERRIDE(), BANK_SELECT())} =
+        BankSelect_MIDI_Event->new(
+            destinations => $self->config->destination_ports);
+
+    $midimap->{_state_tr(PROGRAM_CHANGE(), NORMAL())} =
         ProgramChange_MIDI_Event->new(
             destinations => $self->config->destination_ports);
-    $midimap->{NORMAL() . '->' . NORMAL()} = Normal_MIDI_Event->new(
-            destinations => $self->config->destination_ports);
+    $midimap->{_state_tr(PROGRAM_CHANGE, OVERRIDE())} = undef;      # (no-op)
+    $midimap->{_state_tr(PROGRAM_CHANGE, PROGRAM_CHANGE())} = undef;# (no-op)
 # !!!!bogus entry, for testing - remove when finished:
-# !!!    $midimap->{NORMAL() . '->' . NORMAL()} = BankSelect_MIDI_Event->new(
-    $midimap->{OVERRIDE() . '->' . BANK_SELECT()} = BankSelect_MIDI_Event->new(
-            destinations => $self->config->destination_ports);
-    $midimap->{OVERRIDE() . '->' . PROGRAM_CHANGE()} = undef;   # (no-op)
-# etc....
+# !!!    $midimap->{_state_tr(NORMAL(), NORMAL())} = BankSelect_MIDI_Event->new(
 }
+
 
 # map of MIDI_Event subtype instances: processing-state -> appropriate subtype
 has _midi_event_map => (
