@@ -36,12 +36,12 @@ sub dispatch_next_event {
     ++$event_count;
     my $old_state = $self->state;
     my $state_transition = $self->execute_state_change(\@alsa_event);
-say "state_transition: ", $state_transition;
+say STDERR "state_transition: ", human_readable_st($state_transition);
     my $event = $self->_midi_event_map->{$state_transition};
     if (defined $event) {
         $event->event_data(\@alsa_event);
         $event->dispatch($self);
-say "event: ", Dumper($event);
+#say "event: ", Dumper($event);
     } else {
 say "dispatch_next_event - no-op for $state_transition ",
 Dumper(@alsa_event);
@@ -99,6 +99,14 @@ has _midi_event_map => (
     default => sub { {} },  # Initialized to empty hash reference.
 );
 
+# Human-readable state transition - for debugging
+sub human_readable_st {
+    my ($s) = @_;
+if ($s) { say "HR - s: $s" } else { say "HR - dollar s is false" }
+    my ($s1, $s2) = split(/->/, $s);
+    my @parts = split(/->/, $s);
+    _name_for_state($s1) . ' -> ' . _name_for_state($s2);
+}
 
 1;
 

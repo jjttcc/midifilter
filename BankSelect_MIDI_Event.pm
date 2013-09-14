@@ -8,7 +8,8 @@ use constant::boolean;
 use feature qw(state);
 use Carp;
 use Data::Dumper;
-use MIDI_Facilities;
+use MIDI_StateMachine;
+#use MIDI_Facilities;
 
 
 extends 'MIDI_Event';
@@ -46,7 +47,7 @@ say "data: ", Dumper($data);
             [$channel, 0, 0, 0, BANKMSB_SELECT(), $msb]);
 say "sending bank/MSB [$msb] (\n" . Dumper(@bankch_msb) . ')' if FALSE;
         output(@bankch_msb);
-say("sending bank/MSB [$msb]", @bankch_msb);
+say("sending bank/MSB [$msb]", Dumper(@bankch_msb));
         my @bankch_lsb = (CONTROLLER(), $flags, $tag,
             $queue, $time, $myself, $dest,
             [$channel, 0, 0, 0, BANKLSB_SELECT(), $lsb]);
@@ -56,7 +57,7 @@ say "sending bank/LSB [$lsb] (\n" . Dumper(@bankch_lsb) . ')' if FALSE;
             $time, $myself, $dest, [$channel, 0, 0, 0, 0, $program1]);
         # Start the new bank at program 0 (first program):
         output(@pgmch);
-say("sending bank/LSB [$lsb]", @bankch_lsb);
+say("sending bank/LSB [$lsb]", Dumper(@bankch_lsb));
     }
     $client->_set_state(NORMAL());
 }
@@ -87,7 +88,7 @@ sub next_bank {
     } elsif ($msb == 127) {
             $result = [0, 0]; # GM
     } else {
-        croak "Fatal error: code defect [line " . __LINE__;
+        croak "Fatal error: code defect [line " . __LINE__ . ']';
     }
 =cut=
 # !!!!Remove this switch/case version when the above is verified.
@@ -143,7 +144,7 @@ sub previous_bank {
     } elsif ($msb == 127) {
         $result = [63, 60]; # Mix voice
     } else {
-        croak "Fatal error: code defect [line " . __LINE__;
+        croak "Fatal error: code defect [line " . __LINE__ . ']';
     }
 =cut=
 #!!!!!!!!!!!!!!!!!!!!

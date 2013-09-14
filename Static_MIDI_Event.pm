@@ -11,7 +11,9 @@ extends 'MIDI_Event';
 
 sub dispatch {
     my ($self) = @_;
+if ($self->type == 42) { return; }  #!!!!!
 say ref $self, "::dispatch called - self:", Dumper($self);
+say "type: ", $self->type;
 say "dests: ", Dumper($self->destinations);
 # !!!!dummy - needs implementation
     $self->_send_output();
