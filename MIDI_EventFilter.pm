@@ -11,6 +11,7 @@ use Overriding_MIDI_Event;
 use ProgramChange_MIDI_Event;
 use BankSelect_MIDI_Event;
 use ExternalCommand_MIDI_Event;
+use RealTime_MIDI_Event;
 
 # This module uses Filter::Macro so that its contents will be expanded
 # here (used for optimization) instead of the standard perl compile process.
@@ -58,11 +59,6 @@ sub _state_tr {
     "$s1->$s2";
 }
 
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#   NORMAL()         => [OVERRIDE, NORMAL],
-#   BANK_SELECT()    => [OVERRIDE, NORMAL],
-#   OVERRIDE()       => [OVERRIDE, PROGRAM_CHANGE, NORMAL, BANK_SELECT],
-#   PROGRAM_CHANGE() => [PROGRAM_CHANGE, NORMAL, OVERRIDE],
 sub BUILD {
     my ($self) = @_;
     my $midimap = $self->_midi_event_map;
@@ -89,8 +85,9 @@ say "MEF BUILD - config: ", Dumper($self->config);
     $midimap->{_state_tr(OVERRIDE(), EXTERNAL_CMD())} =
         ExternalCommand_MIDI_Event->new(
             destinations => $self->config->destination_ports);
-# !!!!bogus entry, for testing - remove when finished:
-# !!!    $midimap->{_state_tr(NORMAL(), NORMAL())} = BankSelect_MIDI_Event->new(
+    $midimap->{_state_tr(OVERRIDE(), REALTIME())} =
+        RealTime_MIDI_Event->new(destinations =>
+            $self->config->destination_ports);
 }
 
 

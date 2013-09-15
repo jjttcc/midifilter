@@ -12,6 +12,9 @@ use MIDI::ALSA qw(
     SND_SEQ_EVENT_NOTEOFF
     SND_SEQ_EVENT_PGMCHANGE
     SND_SEQ_EVENT_CONTROLLER
+    SND_SEQ_EVENT_START
+    SND_SEQ_EVENT_STOP
+    SND_SEQ_EVENT_CONTINUE
     input
     output
     connectto
@@ -41,8 +44,14 @@ sub B7()                  { 107 }
 sub Bb7()                 { 106 }
 sub A7()                  { 105 }
 sub A0()                  { 21 }    # Bottom A on keyboard
+sub A1()                  { 33 }
+sub Bb1()                 { 34 }
+sub B1()                  { 35 }
 # lowest MIDI pitch value used for event override control:
 sub CTL_START()           { A7() }
+sub RT_START()            { A1() }
+sub RT_STOP()             { Bb1()}
+sub RT_CONT()             { B1() }
 sub LOWEST_88KEY_PITCH()  { A0() }  # Bottom note on keyboard
 sub HIGHEST_88KEY_PITCH() { C8() }  # Top note on keyboard
 
@@ -68,6 +77,14 @@ sub VALUE()    { 5 }
 # For bank-select: The pitch value that indicates decrementing of bank-select
 # value
 sub DOWN_PITCH() { A7() }
+
+# Event-filtering processing states
+sub NORMAL()         { 0 } # Next event to be output as is
+sub OVERRIDE()       { 1 } # Command override state
+sub PROGRAM_CHANGE() { 2 } # Program change to be sent
+sub BANK_SELECT()    { 3 } # Bank select to be sent
+sub EXTERNAL_CMD()   { 4 } # External command to be executed
+sub REALTIME()       { 5 } # MIDI real-time message to be sent
 
 1;
 

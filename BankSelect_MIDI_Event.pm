@@ -8,8 +8,7 @@ use constant::boolean;
 use feature qw(state);
 use Carp;
 use Data::Dumper;
-use MIDI_StateMachine;
-#use MIDI_Facilities;
+use MIDI_Facilities;
 
 
 extends 'MIDI_Event';

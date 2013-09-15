@@ -8,8 +8,7 @@ use constant::boolean;
 use feature qw(state);
 use Carp;
 use Data::Dumper;
-use MIDI_StateMachine;
-#use MIDI_Facilities;
+use MIDI_Facilities;
 
 
 extends 'MIDI_Event';
@@ -21,7 +20,7 @@ sub dispatch {
     my ($self, $client) = @_;
 
 say "dispatch [for ", ref $self, "]: self: ", Dumper($self);
-    my $data = $self->event_data->[DATA()];
+    my $data = $self->data;
 say "data: ", Dumper($data);
     # Do we need the channel?
     my ($channel, $pitch) = @$data;
@@ -32,9 +31,10 @@ say "data: ", Dumper($data);
         23 => 'echo This is a test|write $USER',
         24 => 'date',
     );
-    my $cmd = $command_map{$pitch};
+    my $cmd = $command_map{$pitch} . '&';
 say "COMMAND: $cmd";
     if ($cmd) {
+        # !!!fork/exec might be better.
         system($cmd);
     }
     $client->_set_state(NORMAL());
