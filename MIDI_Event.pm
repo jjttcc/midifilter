@@ -97,8 +97,8 @@ say "MIDI_Event::_send_output [for ", ref $self, "]: self: ", Dumper($self);
     # (Assume: queue, time, source, destination [undefs] are not needed:)
     my ($type, $flags, $tag, undef, undef, undef, undef, $data) =
         @{$self->event_data};
-if (defined $data->[PITCH()] and $data->[PITCH()] == 21) { #!!!!
-exit $data->[PITCH()]; } #!!!!!!
+#if (defined $data->[PITCH()] and $data->[PITCH()] == 21) { #!!!!
+#exit $data->[PITCH()]; } #!!!!!!
     for my $dest (@$destinations) {
         # Pass on the received event/message.
         output($type, $flags, $tag, $queue, $time, $myself, $dest, $data);

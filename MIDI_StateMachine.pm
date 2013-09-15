@@ -21,13 +21,16 @@ sub NORMAL()         { 0 } # Next event to be output as is
 sub OVERRIDE()       { 1 } # Command override state
 sub PROGRAM_CHANGE() { 2 } # Program change to be sent
 sub BANK_SELECT()    { 3 } # Bank select to be sent
+sub EXTERNAL_CMD()   { 4 } # External command to be executed
 
 # valid state transitions - hash reference
 my $valid_state_transitions = {
     NORMAL()         => [OVERRIDE, NORMAL],
     BANK_SELECT()    => [OVERRIDE, NORMAL],
-    OVERRIDE()       => [OVERRIDE, PROGRAM_CHANGE, NORMAL, BANK_SELECT],
+    OVERRIDE()       => [OVERRIDE, PROGRAM_CHANGE, NORMAL, BANK_SELECT,
+                        EXTERNAL_CMD],
     PROGRAM_CHANGE() => [PROGRAM_CHANGE, NORMAL, OVERRIDE],
+    EXTERNAL_CMD()   => [OVERRIDE, NORMAL],
 };
 
 
@@ -35,6 +38,7 @@ my $valid_state_transitions = {
 my $PC_pitch     =  {B7() => TRUE, C8() => TRUE};   # program-change pitch
 my $BNKSL_pitch  =  {Bb7() => TRUE, A7() => TRUE};  # bank-select pitch
 my $PC_add       =  {B7() => TRUE};                 # add to PC value
+my $EXTC_pitch   =  {A0() => TRUE};                 # external command
 
 ###  Access
 
@@ -48,7 +52,7 @@ has state => (
 );
 
 
-### Utility routines
+#####  Implementation (non-public)
 
 ##[Notes: For now, if override, don't bother to check: $pitch >= CTL_START.
 # Lower pitches will be discarded.  (It might make sense to always do this.)]
@@ -56,10 +60,6 @@ has state => (
 # Based on the current state and $alsa_event (the last ALSA-MIDI event
 # received), change the state and take any other appropriate actions.
 # Return the resulting state transition, as a string.
-# !!!Note/Reminder: If performance is slow, try moving this to
-# MIDI_Facilities.  Reason: Perhaps there is a conflict between the
-# Filter::Macro facility and perl's optimizing of the prototyped constant
-# functions (e.g., 'sub NORMAL() { 0 }').  It's worth a try.
 sub execute_state_change {
     my ($self, $alsa_event) = @_;
 
@@ -67,48 +67,18 @@ sub execute_state_change {
     my $old_state = $self->state;
     my $new_state = $old_state;
     my $type = $alsa_event->[TYPE()];
-    my ($channel, $pitch, $velocity);
-    my ($param, $value);
-    if ($type == NOTEON() or $type == NOTEOFF()) {
-        ($channel, $pitch, $velocity, undef, undef) = @{$alsa_event->[DATA()]};
-    } elsif ($type == CONTROLLER()) {
-        ($channel, undef, undef, undef, $param, $value) =
-            @{$alsa_event->[DATA()]};
-    }
     if ($old_state == OVERRIDE()) {
-        if ($type == NOTEON() or $type == NOTEOFF()) {
-            if ($type == NOTEOFF() or $velocity == 0) {   # NOTE-OFF
-                if ($PC_pitch->{$pitch}) {
-                    $new_state = PROGRAM_CHANGE();
-                    $add_to_progch = $PC_add->{$pitch};
-                } elsif ($BNKSL_pitch->{$pitch}) {
-                    $new_state = BANK_SELECT();
-                } else {
-                    $new_state = NORMAL();  # override mode canceled
-                }
-            } else {
-                # no-op: Discard NOTE-ON event.
-            }
-        }   # (else not note event - discard it.)
+        $new_state = $self->override_state_transition($alsa_event, $old_state,
+            \$add_to_progch);
     } elsif ($old_state == NORMAL() or $old_state == BANK_SELECT()) {
+        my ($param);
+        (undef, undef, undef, undef, $param) = @{$alsa_event->[DATA()]};
         if ($type == CONTROLLER() and $param == CHANNEL_VOLUME()) {
             $new_state = OVERRIDE();
-        }   # (else let event be sent on as is.)
-    } else {    # PROGRAM_CHANGE
-        if ($old_state != PROGRAM_CHANGE()) { _code_defect(__LINE__) }
-        if ($type == NOTEON() or $type == NOTEOFF()) {
-            if ($type == NOTEOFF() or $velocity == 0) {   # i.e., NOTE-OFF
-                $new_state = NORMAL();
-                if ($add_to_progch) {   # Note: pitch becomes program #.
-                    $pitch += (127 - HIGHEST_88KEY_PITCH()); # i.e.: 108 => 127
-                } else {
-                    $pitch -= LOWEST_88KEY_PITCH();     # i.e.: 21 => 0
-                }
-                $alsa_event->[DATA()]->[PITCH()] = $pitch;
-            }   # (else discard the note-on event.)
-        } elsif ($type == CONTROLLER() and $param == CHANNEL_VOLUME()) {
-                $new_state = OVERRIDE();
-        }
+        }   # (else no state change, let event be sent on as is.)
+    } else {    # PROGRAM_CHANGE(???!!!)
+        $new_state = $self->progchange_state_transition($alsa_event,
+            $old_state, \$add_to_progch);
     }
     if (DEBUG()) { _check_state_change($old_state, $self->state); }
     if ($new_state != $old_state) {
@@ -117,9 +87,71 @@ sub execute_state_change {
     "$old_state->$new_state";
 }
 
+# The new state (transitioned from an original state of OVERRIDE), according
+# to the contents of $alsa_event and $old_state.
+# Note: $add_to_progch is expected to be a scalar reference and the
+# referenced value might be modified.
+sub override_state_transition {
+    my ($self, $alsa_event, $old_state, $add_to_progch) = @_;
 
-#####  Implementation (non-public)
+    my $result = $old_state;
+    my ($pitch, $velocity);
+    my ($param);
+    my $type = $alsa_event->[TYPE()];
+    if ($type == NOTEON() or $type == NOTEOFF()) {
+        (undef, $pitch, $velocity, undef, undef) = @{$alsa_event->[DATA()]};
+        if ($type == NOTEOFF() or $velocity == 0) {   # NOTE-OFF
+            if ($PC_pitch->{$pitch}) {
+                $result = PROGRAM_CHANGE();
+                $$add_to_progch = $PC_add->{$pitch};
+            } elsif ($BNKSL_pitch->{$pitch}) {
+                $result = BANK_SELECT();
+            } elsif ($EXTC_pitch->{$pitch}) {
+                $result = EXTERNAL_CMD();
+            } else {
+                $result = NORMAL();  # override mode canceled
+            }
+        } else {
+            # no-op: Discard NOTE-ON event.
+        }
+    } else {
+        # not a note event - discard
+    }
+    $result;
+}
 
+# The new state (transitioned from an original state of PROGRAM_CHANGE),
+# according to the contents of $alsa_event and $old_state.
+# Note: $add_to_progch is expected to be a scalar reference and the
+# referenced value might be modified.
+sub progchange_state_transition {
+    my ($self, $alsa_event, $old_state, $add_to_progch) = @_;
+
+    my $result = $old_state;
+    my ($pitch, $velocity);
+    my $type = $alsa_event->[TYPE()];
+    if ($old_state != PROGRAM_CHANGE()) { _code_defect(__LINE__) }  #????
+    if ($type == NOTEON() or $type == NOTEOFF()) {
+        (undef, $pitch, $velocity, undef, undef) = @{$alsa_event->[DATA()]};
+        if ($type == NOTEOFF() or $velocity == 0) {   # i.e., NOTE-OFF
+            $result = NORMAL();
+            if ($$add_to_progch) {   # Note: pitch becomes program #.
+                $pitch += (127 - HIGHEST_88KEY_PITCH()); # i.e.: 108 => 127
+            } else {
+                $pitch -= LOWEST_88KEY_PITCH();     # i.e.: 21 => 0
+            }
+            $alsa_event->[DATA()]->[PITCH()] = $pitch;
+        }   # (else discard the note-on event.)
+    } elsif ($type == CONTROLLER()) {
+        my ($param) = $alsa_event->[PARAM()];
+        if ($param == CHANNEL_VOLUME()) {
+            $result = OVERRIDE();
+        }
+    }
+    $result;
+}
+
+### Utility routines
 
 sub _name_for_state {
     my ($s) = @_;
@@ -127,7 +159,8 @@ sub _name_for_state {
         NORMAL()         => 'NORMAL',
         OVERRIDE()       => 'OVERRIDE',
         PROGRAM_CHANGE() => 'PROGRAM_CHANGE',
-        BANK_SELECT() => 'BANK_SELECT',
+        BANK_SELECT()    => 'BANK_SELECT',
+        EXTERNAL_CMD()   => 'EXTERNAL_CMD',
     };
     $name_for->{$s};
 }

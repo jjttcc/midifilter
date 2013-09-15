@@ -28,6 +28,9 @@ sub NOTEON()     { SND_SEQ_EVENT_NOTEON()     }
 sub NOTEOFF()    { SND_SEQ_EVENT_NOTEOFF()    }
 sub CONTROLLER() { SND_SEQ_EVENT_CONTROLLER() }
 sub PGMCHANGE()  { SND_SEQ_EVENT_PGMCHANGE()  }
+sub START()      { SND_SEQ_EVENT_START()      } # MIDI real time start message
+sub STOP()       { SND_SEQ_EVENT_STOP()       } # MIDI real time stop message
+sub CONTINUE()   { SND_SEQ_EVENT_CONTINUE()   } # MIDI Real time continue msg
 
 # parameter/sub-message types, MIDI pitches, etc.
 sub BANKMSB_SELECT()      { 0 }
@@ -37,10 +40,11 @@ sub C8()                  { 108 }
 sub B7()                  { 107 }
 sub Bb7()                 { 106 }
 sub A7()                  { 105 }
+sub A0()                  { 21 }    # Bottom A on keyboard
 # lowest MIDI pitch value used for event override control:
 sub CTL_START()           { A7() }
-sub LOWEST_88KEY_PITCH()  { 21 }     # Bottom A on keyboard
-sub HIGHEST_88KEY_PITCH() { 108 }   # Top C on keyboard
+sub LOWEST_88KEY_PITCH()  { A0() }  # Bottom note on keyboard
+sub HIGHEST_88KEY_PITCH() { C8() }  # Top note on keyboard
 
 # ALSA MIDI event-data components - array position
 sub TYPE()   { 0 }

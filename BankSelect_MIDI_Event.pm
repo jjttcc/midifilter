@@ -1,6 +1,6 @@
 package BankSelect_MIDI_Event;
-# MIDI events to be output as two bank-select (MSB and LSB) events and a
-# program-change (patch 0) event
+# MIDI (note) events to be output as two bank-select (MSB and LSB) events
+# and a program-change (patch 0) event
 
 use Mouse;
 use Modern::Perl;
