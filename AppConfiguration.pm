@@ -9,6 +9,8 @@ use Readonly;
 use Carp;
 use Data::Dumper;
 
+use FilterSpecification;
+
 extends 'MIDI_Configuration';
 
 #####  Public interface
@@ -43,12 +45,22 @@ has destination_ports => (
     init_arg => undef,  # i.e., cannot be supplied in 'new' method
 );
 
+# Specifications for filtering logic
+has filter_spec => (
+    is       => 'ro',
+    isa      => 'FilterSpecification',
+    writer   => '_set_filter_spec',
+    init_arg => undef,  # not to be supplied in 'new'
+);
 
 #####  Implementation
 
 sub BUILD {
     my ($self) = @_;
-    my ($sources, $dests) = _alsa_ports(\@ARGV);
+    my $config_lines = _config_lines(\@ARGV);
+    my $fspec = $self->_set_filter_spec(FilterSpecification->new());
+    $fspec->process($config_lines);
+    my ($sources, $dests) = _alsa_ports($config_lines);
 say '$sources, $dests: ', Dumper($sources, $dests);
 say "my name is ", $self->program_name;
     $self->_set_source_ports($sources);
@@ -69,15 +81,11 @@ say "DEBUG: sources: " . Dumper($self->source_ports());
 say "DEBUG: destinations: " . Dumper($self->destination_ports());
 }
 
-# ALSA source and destination ports (array with two members, each of which is
-# an ArrayRef), extracted from the specified files
-sub _alsa_ports {
+# Uncommented lines, lower-cased, from the configuration file(s) (ArrayRef)
+sub _config_lines {
     my ($files) = @_;
-    my @result = ([], []);
     use IO::File qw();
-say "_alsa_ports - files: ", Dumper($files);
-    Readonly::Scalar my $FROM => 0;
-    Readonly::Scalar my $TO   => 1;
+    my $result;
 
     for my $f (@$files) {
         if (-f $f) {
@@ -87,22 +95,38 @@ say "_alsa_ports - files: ", Dumper($files);
                     my $line;
                     while ($line = <$file>) {
                         $line = lc $line;
-                        # (Example valid line: '16, 0')
-                        if ($line =~ /^([a-z]+:?)\s*(\d+)[,:]\s*(\d+)\s*$/) {
-                            my ($tag, $part1, $part2) = ($1, $2, $3);
-                            if ($tag =~ /from:?/) {
-                                push @{$result[$FROM]}, [$part1, $part2];
-                            } elsif ($tag =~ /to:?/) {
-                                push @{$result[$TO]}, [$part1, $part2];
-                            } else {
-                                carp "Invalid port-spec line: $line";
-                            }
-                        }
+                        $line =~ s@\s*#.*@@;    # Remove tail comments.
+                        push @$result, $line;
                     }
                     undef $file;    # close $file
                 }
             } else {
                 carp "File $f is not readable.";
+            }
+        }
+    }
+    $result;
+}
+
+# ALSA source and destination ports (array with two members, each of which is
+# an ArrayRef), extracted from the specified strings (ArrayRef - lines from
+# configuration file)
+sub _alsa_ports {
+    my ($lines) = @_;
+    my @result = ([], []);
+    Readonly::Scalar my $FROM => 0;
+    Readonly::Scalar my $TO   => 1;
+
+    for my $line (@$lines) {
+        # (Example valid line: 'to: 16, 0')
+        if ($line =~ /^([a-z]+:?)\s*(\d+)[,:]\s*(\d+)\s*$/) {
+            my ($tag, $part1, $part2) = ($1, $2, $3);
+            if ($tag =~ /from:?/) {
+                push @{$result[$FROM]}, [$part1, $part2];
+            } elsif ($tag =~ /to:?/) {
+                push @{$result[$TO]}, [$part1, $part2];
+            } else {
+                carp "Invalid port-spec line: $line";
             }
         }
     }

@@ -10,6 +10,7 @@ use Carp;
 use Data::Dumper;
 use feature qw(state);
 
+# !!!!!!use FilterSpecification;
 use MIDI_Facilities;
 
 
@@ -29,13 +30,6 @@ my $valid_state_transitions = {
 };
 
 
-# (!!These might want to become configurable.)
-my $PC_pitch     =  {B7() => TRUE, C8() => TRUE};   # program-change pitch
-my $BNKSL_pitch  =  {Bb7() => TRUE, A7() => TRUE};  # bank-select pitch
-my $PC_add       =  {B7() => TRUE};                 # add to PC value
-my $EXTC_pitch   =  {A0() => TRUE};                 # external command
-my $RT_pitch     =  {A1() => TRUE, Bb1() => TRUE,   # real-time message
-                     B1() => TRUE};                 # (start, stop, cont)
 ###  Access
 
 # Current MIDI-event processing state
@@ -47,11 +41,11 @@ has state => (
     init_arg => undef,   # Not allowed in 'new' method.
 );
 
+# configuration settings - abstract feature
+sub config {
+}
 
 #####  Implementation (non-public)
-
-##[Notes: For now, if override, don't bother to check: $pitch >= CTL_START.
-# Lower pitches will be discarded.  (It might make sense to always do this.)]
 
 # Based on the current state and $alsa_event (the last ALSA-MIDI event
 # received), change the state and take any other appropriate actions.
@@ -91,6 +85,24 @@ if ($old_state == BANK_SELECT()) {say "old_state == BANK_SELECT detected!!!"}
 sub override_state_transition {
     my ($self, $alsa_event, $old_state, $add_to_progch) = @_;
 
+# !!!say STDERR "config: ", Dumper($self->config);
+    state $prog_ch_high_pitch = $self->config->filter_spec->program_change_high;
+    state $prog_ch_low_pitch = $self->config->filter_spec->program_change_low;
+    state $prog_ch_pitches = {$prog_ch_high_pitch => TRUE,
+        $prog_ch_low_pitch => TRUE};
+    state $bank_sel_up_pitch = $self->config->filter_spec->bank_select_up;
+    state $bank_sel_down_pitch = $self->config->filter_spec->bank_select_down;
+    state $bank_sel_pitches = {$bank_sel_down_pitch => TRUE,
+        $bank_sel_up_pitch => TRUE};
+    state $external_commands = $self->config->filter_spec->external_commands;
+    state $is_extcmd;
+    for my $value (keys %$external_commands) {
+        $is_extcmd->{$value} = TRUE;
+    }
+    state $is_rt_pitch;
+    $is_rt_pitch->{$self->config->filter_spec->realtime_start} = TRUE;
+    $is_rt_pitch->{$self->config->filter_spec->realtime_stop} = TRUE;
+    $is_rt_pitch->{$self->config->filter_spec->realtime_continue} = TRUE;
     my $result = $old_state;
     my ($pitch, $velocity);
     my ($param);
@@ -98,14 +110,14 @@ sub override_state_transition {
     if ($type == NOTEON() or $type == NOTEOFF()) {
         (undef, $pitch, $velocity, undef, undef) = @{$alsa_event->[DATA()]};
         if ($type == NOTEOFF() or $velocity == 0) {   # NOTE-OFF
-            if ($PC_pitch->{$pitch}) {
+            if ($prog_ch_pitches->{$pitch}) {
                 $result = PROGRAM_CHANGE();
-                $$add_to_progch = $PC_add->{$pitch};
-            } elsif ($BNKSL_pitch->{$pitch}) {
+                $$add_to_progch = $pitch == $prog_ch_high_pitch;
+            } elsif ($bank_sel_pitches->{$pitch}) {
                 $result = BANK_SELECT();
-            } elsif ($EXTC_pitch->{$pitch}) {
+            } elsif ($is_extcmd->{$pitch}) {
                 $result = EXTERNAL_CMD();
-            } elsif ($RT_pitch->{$pitch}) {
+            } elsif ($is_rt_pitch->{$pitch}) {
                 $result = REALTIME();
             } else {
                 $result = NORMAL();  # override mode canceled
@@ -128,7 +140,12 @@ sub progchange_state_transition {
     my $result = $old_state;
     my ($pitch, $velocity);
     my $type = $alsa_event->[TYPE()];
-    if ($old_state != PROGRAM_CHANGE()) { _code_defect(__LINE__) }  #????
+    state $override_cc_number =
+        $self->config->filter_spec->override_cc_control_number;
+if ($old_state != PROGRAM_CHANGE()) {
+say STDERR "progchange_state_transition - old state: ",
+_name_for_state($old_state);
+}
     if ($type == NOTEON() or $type == NOTEOFF()) {
         (undef, $pitch, $velocity, undef, undef) = @{$alsa_event->[DATA()]};
         if ($type == NOTEOFF() or $velocity == 0) {   # i.e., NOTE-OFF
@@ -142,7 +159,7 @@ sub progchange_state_transition {
         }   # (else discard the note-on event.)
     } elsif ($type == CONTROLLER()) {
         my ($param) = $alsa_event->[PARAM()];
-        if ($param == CHANNEL_VOLUME()) {
+        if ($param == $override_cc_number) {
             $result = OVERRIDE();
         }
     }
@@ -188,7 +205,7 @@ sub _check_state_change {
 
 sub _code_defect {
     my ($line) = @_;
-    croak "Fatal error: code defect [line " . $line . ']';
+    croak "[MSM] Fatal error: code defect [line " . $line . ']';
 }
 
 1;

@@ -4,6 +4,7 @@ package MIDI_Configuration;
 use Mouse;
 use Modern::Perl;
 use File::Basename qw(basename);
+use constant::boolean;
 
 
 ### public
@@ -22,5 +23,6 @@ sub destination_ports {}
 sub application_name {
     basename($0);
 }
+
 
 1;

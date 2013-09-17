@@ -24,7 +24,7 @@ sub flags {
     $self->event_data->[FLAGS()];
 }
 
-no warnings qw(once);
+no warnings qw(once);   #!!!!!
 # event time stamp
 sub time {
     my ($self) = @_;
@@ -59,12 +59,10 @@ has event_data => (
     isa => 'ArrayRef',
 );
 
-# reference to array of destinations to which the event is to be sent
-has destinations => (
+has config => (
     is  => 'ro',
-    isa => 'ArrayRef[ArrayRef[Int]]',
+    isa => 'MIDI_Configuration',
 );
-
 
 # Dispatch the event to 'destinations'.
 sub dispatch {
@@ -89,7 +87,7 @@ sub _send_output {
     my ($self) = @_;
 say "MIDI_Event::_send_output [for ", ref $self, "]: self: ", Dumper($self);
     # (Optimization: set @destinations only once:)
-    state $destinations = $self->destinations;
+    state $destinations = $self->config->destination_ports;
     # myself -> source for output calls - not expected to change:
     state $myself = $self->destination();
     state $queue = undef;

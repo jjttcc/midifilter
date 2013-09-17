@@ -23,17 +23,18 @@ sub dispatch {
     state $program1 = 0;
 say "dispatch [for ", ref $self, "]: self: ", Dumper($self);
     # (Optimization: set @destinations only once:)
-    state $destinations = $self->destinations;
+    state $destinations = $self->config->destination_ports;
     # myself -> source for output calls - not expected to change:
     state $myself = $self->destination();
     state $queue = undef;
     state $time = 0;
+    state $bank_select_down = $self->config->filter_spec->bank_select_down;
     # (Assume: queue, time, source, destination [undefs] are not needed:)
     my (undef, $flags, $tag,  undef, undef, undef, undef, $data) =
         @{$self->event_data};
 say "data: ", Dumper($data);
     my ($channel, $pitch) = @$data;
-    if ($pitch == DOWN_PITCH()) {
+    if ($pitch == $bank_select_down) {
         $current_bank = previous_bank($current_bank);
     } else {
         $current_bank = next_bank($current_bank);
@@ -52,6 +53,9 @@ say("sending bank/MSB [$msb]", Dumper(@bankch_msb));
             [$channel, 0, 0, 0, BANKLSB_SELECT(), $lsb]);
 say "sending bank/LSB [$lsb] (\n" . Dumper(@bankch_lsb) . ')' if FALSE;
         output(@bankch_lsb);
+# !!!Possible improvement: keep track of the current program (may require a
+# program query in $client) and send that here instead of prog 0.
+# (!!!Also, perhaps, keep track of the current bank - in $client.)
         my @pgmch = (PGMCHANGE(), $flags, $tag, $queue,
             $time, $myself, $dest, [$channel, 0, 0, 0, 0, $program1]);
         # Start the new bank at program 0 (first program):
@@ -89,31 +93,6 @@ sub next_bank {
     } else {
         croak "Fatal error: code defect [line " . __LINE__ . ']';
     }
-=cut=
-# !!!!Remove this switch/case version when the above is verified.
-    switch ($msb) {
-        case 0 {
-            $result = [63, 0]; # Pre1
-        }
-        case 63 {
-            switch ($lsb) {
-                case [0..9] { $result = [$msb, $lsb + 1]; }
-                case 10 { $result = [$msb, 32]; }
-                case 32 { $result = [$msb, 40]; }
-                case 40 { $result = [$msb, 50]; }
-                case 50 { $result = [$msb, 60]; }
-                case 60 { $result = [127, 0]; }   # GM drum
-            }
-        }
-        case 127 {
-            $result = [0, 0]; # GM
-        }
-        else {
-            croak "Fatal error: code defect [line " . __LINE__;
-        }
-    }
-say "next_bank - result: " . Dumper($result);
-=cut=
     $result;
 }
 
@@ -145,31 +124,6 @@ sub previous_bank {
     } else {
         croak "Fatal error: code defect [line " . __LINE__ . ']';
     }
-=cut=
-#!!!!!!!!!!!!!!!!!!!!
-# !!!!Remove this switch/case version when the above is verified.
-    switch ($msb) {
-        case 0 {
-            $result = [127, 0]; # GM drum
-        }
-        case 63 {
-            switch ($lsb) {
-                case 0 { $result = [0, 0]; }    # GM
-                case [1..10] { $result = [$msb, $lsb - 1]; }
-                case 32 { $result = [$msb, 10]; }
-                case 40 { $result = [$msb, 32]; }
-                case 50 { $result = [$msb, 40]; }
-                case 60 { $result = [$msb, 50]; }
-            }
-        }
-        case 127 {
-            $result = [63, 60]; # Mix voice
-        }
-        else {
-            croak "Fatal error: code defect [line " . __LINE__;
-        }
-    }
-=cut=
     $result;
 }
 
