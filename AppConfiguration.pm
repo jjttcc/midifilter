@@ -23,7 +23,7 @@ has midi_stream => (
 );
 
 # Name of the running program
-has program_name => (
+has application_name => (
     is      => 'ro',
     isa     => 'Str',
     default => sub { MIDI_Configuration::application_name(); }
@@ -55,24 +55,35 @@ has filter_spec => (
 
 #####  Implementation
 
+has _client_number => (
+    is       => 'ro',
+    isa      => 'HashRef[Int]',
+    writer   => '_set_client_number',
+    init_arg => undef,  # not to be supplied in 'new'
+);
+
 sub BUILD {
     my ($self) = @_;
+    # Register this running program as an ALSA MIDI client.
+    if (not MIDI::ALSA::client($self->application_name, 1, 1, 0)) {
+        croak "MIDI::ALSA::client failed";
+    }
+    my %client_number = map {
+        lc $_
+    } reverse MIDI::ALSA::listclients();
+    $self->_set_client_number(\%client_number);
+#say "self [1]: ", Dumper($self);
     my $config_lines = _config_lines(\@ARGV);
     my $fspec = $self->_set_filter_spec(FilterSpecification->new());
     $fspec->process($config_lines);
-    my ($sources, $dests) = _alsa_ports($config_lines);
+    my ($sources, $dests) = $self->_alsa_ports($config_lines);
 say '$sources, $dests: ', Dumper($sources, $dests);
-say "my name is ", $self->program_name;
     $self->_set_source_ports($sources);
     $self->_set_destination_ports($dests);
     $self->_set_midi_stream(MIDI_EventStream->new(
             source_ports => $self->source_ports,
             destination_ports => $self->destination_ports,
             config => $self));
-    # Register this running program as an ALSA MIDI client.
-    if (not MIDI::ALSA::client($self->program_name, 1, 1, 0)) {
-        croak "MIDI::ALSA::client failed";
-    }
 }
 
 sub debug {
@@ -94,6 +105,7 @@ sub _config_lines {
                 if (defined $file) {
                     my $line;
                     while ($line = <$file>) {
+                        chomp $line;
                         $line = lc $line;
                         $line =~ s@\s*#.*@@;    # Remove tail comments.
                         push @$result, $line;
@@ -112,6 +124,41 @@ sub _config_lines {
 # an ArrayRef), extracted from the specified strings (ArrayRef - lines from
 # configuration file)
 sub _alsa_ports {
+    my ($self, $lines) = @_;
+    my @result = ([], []);
+    Readonly::Scalar my $FROM => 0;
+    Readonly::Scalar my $TO   => 1;
+
+#say "self [2]: ", Dumper($self);
+    my $client_number = $self->_client_number;
+#say "clnum: ", Dumper($client_number);
+    for my $line (@$lines) {
+        # (Example valid line: 'to: rosegarden, 0')
+        if ($line =~ /^([a-z]+:?)\s*(\w+),\s*(\d+)\s*$/) {
+            my ($tag, $name, $minor_number) = ($1, $2, $3);
+say "tag, name, minor_number: ", Dumper($tag, $name, $minor_number);
+            if (exists $client_number->{$name}) {
+                my $major_number = $client_number->{$name};
+say "MATCH for '$line'";
+                if ($tag =~ /from:?/) {
+                    push @{$result[$FROM]}, [$major_number, $minor_number];
+                } elsif ($tag =~ /to:?/) {
+                    push @{$result[$TO]}, [$major_number, $minor_number];
+                } else {
+                    carp "Invalid port-spec line: $line";
+                }
+            } else {
+say "no match for '$line'";
+            }
+        }
+    }
+    @result;
+}
+
+# ALSA source and destination ports (array with two members, each of which is
+# an ArrayRef), extracted from the specified strings (ArrayRef - lines from
+# configuration file)
+sub _old___alsa_ports {
     my ($lines) = @_;
     my @result = ([], []);
     Readonly::Scalar my $FROM => 0;

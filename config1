@@ -1,18 +1,18 @@
 # 'to:' indicates an ALSA/MIDI port to send to
 # 'from:' indicates an ALSA/MIDI port to receive from
-to: 128,0	# This is a comment.
-to: 131,0	# This is a comment.
-from: 16, 0	# This is a comment.
-program_change_high: 108	# pitch to trigger prog change, adjusted upward
-program_change_low: 107		# pitch to trigger prog change, adjusted downward
-bank_select_up: 106			# pitch to trigger bank-select - increment
-bank_select_down: 105		# pitch to trigger bank-select - decrement
+from: mia, 0
+to: rosegarden, 0
+to: kmidimon, 0
+program_change_high: 108    # pitch to trigger prog change, adjusted upward
+program_change_low: 107     # pitch to trigger prog change, adjusted downward
+bank_select_up: 106         # pitch to trigger bank-select - increment
+bank_select_down: 105       # pitch to trigger bank-select - decrement
 #external_cmd: 21 pkill -STOP -f rosegarden
-external_cmd: 21 echo midifilter test succeeded|mutt -s 'midifilter test' jim.cochrane@gmail.com
-external_cmd: 22 echo midifilter test succeeded >/tmp/mftest$$
-external_cmd: 72 <terminate>	# Special "command": terminate midifilter
+external_cmd: 21 echo midifilter test succeeded|mutt -s 'midifilter test' me_me_me@gmail.com
+external_cmd: 22 echo midifilter test succeeded at `date`>/tmp/mftest$$
+external_cmd: 72 <terminate>    # Special "command": terminate midifilter
 real_time_start: 33
 real_time_stop: 34
 real_time_continue: 35
 # control-change number (decimal) switch to "override" mode:
-override_cc_control_number: 7	# channel volume
+override_cc_control_number: 7   # channel volume

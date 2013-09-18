@@ -13,6 +13,6 @@ my $app = AppConfiguration->new();
 $app->debug();
 my $stream = $app->midi_stream();
 
-say "starting ", $app->program_name();
+say "starting ", $app->application_name();
 say "app verbose: ", ($app->verbose()? 'yes': 'no');
 $stream->process();
