@@ -10,7 +10,6 @@ use Carp;
 use Data::Dumper;
 use feature qw(state);
 
-# !!!!!!use FilterSpecification;
 use MIDI_Facilities;
 
 
@@ -61,8 +60,8 @@ sub execute_state_change {
         $new_state = $self->override_state_transition($alsa_event, $old_state,
             \$add_to_progch);
     } elsif ($old_state == NORMAL() or $old_state == BANK_SELECT()) {
-        my ($param); #!!!Check: will $old_state == BANK_SELECT ever occur here?
 if ($old_state == BANK_SELECT()) {say "old_state == BANK_SELECT detected!!!"}
+        my ($param);
         (undef, undef, undef, undef, $param) = @{$alsa_event->[DATA()]};
         if ($type == CONTROLLER() and $param == CHANNEL_VOLUME()) {
             $new_state = OVERRIDE();
@@ -85,7 +84,6 @@ if ($old_state == BANK_SELECT()) {say "old_state == BANK_SELECT detected!!!"}
 sub override_state_transition {
     my ($self, $alsa_event, $old_state, $add_to_progch) = @_;
 
-# !!!say STDERR "config: ", Dumper($self->config);
     state $prog_ch_high_pitch = $self->config->filter_spec->program_change_high;
     state $prog_ch_low_pitch = $self->config->filter_spec->program_change_low;
     state $prog_ch_pitches = {$prog_ch_high_pitch => TRUE,
@@ -145,7 +143,7 @@ sub progchange_state_transition {
     state $lowest_pitch = $self->config->filter_spec->bottom_note_value;
     state $highest_pitch = $self->config->filter_spec->top_note_value;
 if ($old_state != PROGRAM_CHANGE()) {
-say STDERR "progchange_state_transition - old state: ",
+say STDERR "!!!progchange_state_transition - old state: ",
 _name_for_state($old_state);
 }
     if ($type == NOTEON() or $type == NOTEOFF()) {

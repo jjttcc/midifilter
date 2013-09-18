@@ -40,8 +40,6 @@ sub BANKMSB_SELECT()      { 0 }
 sub BANKLSB_SELECT()      { 32 }
 sub CHANNEL_VOLUME()      { 7 }
 
-# (Assumption: 88-key keyboard)
-
 # ALSA MIDI event-data components - array position
 sub TYPE()   { 0 }
 sub FLAGS()  { 1 }

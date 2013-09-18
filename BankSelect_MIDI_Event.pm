@@ -21,7 +21,6 @@ sub dispatch {
 
     state $current_bank = [0, 0];
     state $program1 = 0;
-say "dispatch [for ", ref $self, "]: self: ", Dumper($self);
     # (Optimization: set @destinations only once:)
     state $destinations = $self->config->destination_ports;
     # myself -> source for output calls - not expected to change:
@@ -32,7 +31,6 @@ say "dispatch [for ", ref $self, "]: self: ", Dumper($self);
     # (Assume: queue, time, source, destination [undefs] are not needed:)
     my (undef, $flags, $tag,  undef, undef, undef, undef, $data) =
         @{$self->event_data};
-say "data: ", Dumper($data);
     my ($channel, $pitch) = @$data;
     if ($pitch == $bank_select_down) {
         $current_bank = previous_bank($current_bank);
@@ -45,13 +43,10 @@ say "data: ", Dumper($data);
         my @bankch_msb = (CONTROLLER(), $flags, $tag,
             $queue, $time, $myself, $dest,
             [$channel, 0, 0, 0, BANKMSB_SELECT(), $msb]);
-say "sending bank/MSB [$msb] (\n" . Dumper(@bankch_msb) . ')' if FALSE;
         output(@bankch_msb);
-say("sending bank/MSB [$msb]", Dumper(@bankch_msb));
         my @bankch_lsb = (CONTROLLER(), $flags, $tag,
             $queue, $time, $myself, $dest,
             [$channel, 0, 0, 0, BANKLSB_SELECT(), $lsb]);
-say "sending bank/LSB [$lsb] (\n" . Dumper(@bankch_lsb) . ')' if FALSE;
         output(@bankch_lsb);
 # !!!Possible improvement: keep track of the current program (may require a
 # program query in $client) and send that here instead of prog 0.
@@ -60,7 +55,6 @@ say "sending bank/LSB [$lsb] (\n" . Dumper(@bankch_lsb) . ')' if FALSE;
             $time, $myself, $dest, [$channel, 0, 0, 0, 0, $program1]);
         # Start the new bank at program 0 (first program):
         output(@pgmch);
-say("sending bank/LSB [$lsb]", Dumper(@bankch_lsb));
     }
     $client->_set_state(NORMAL());
 }

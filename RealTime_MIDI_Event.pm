@@ -30,8 +30,6 @@ sub dispatch {
     # (Assume: queue, time, source, destination [undefs] are not needed:)
     my (undef, $flags, $tag,  undef, undef, undef, undef, $data) =
         @{$self->event_data};
-say "dispatch [for ", ref $self, "]: self: ", Dumper($self);
-say "data: ", Dumper($data);
     my (undef, $pitch) = @$data;
     my $msg_type;
     if ($pitch == $start_pitch) {

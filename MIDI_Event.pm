@@ -24,7 +24,6 @@ sub flags {
     $self->event_data->[FLAGS()];
 }
 
-no warnings qw(once);   #!!!!!
 # event time stamp
 sub time {
     my ($self) = @_;
@@ -79,13 +78,11 @@ sub BUILD {
     if (ref $self eq 'MIDI_Event') {
         confess "Instantiation of abstract class [" . $self . "]";
     }
-say "I've been built! [", ref $self, ']';
 }
 
 # Send 'event_data', as is, to 'destinations'.
 sub _send_output {
     my ($self) = @_;
-say "MIDI_Event::_send_output [for ", ref $self, "]: self: ", Dumper($self);
     # (Optimization: set @destinations only once:)
     state $destinations = $self->config->destination_ports;
     # myself -> source for output calls - not expected to change:
@@ -95,8 +92,6 @@ say "MIDI_Event::_send_output [for ", ref $self, "]: self: ", Dumper($self);
     # (Assume: queue, time, source, destination [undefs] are not needed:)
     my ($type, $flags, $tag, undef, undef, undef, undef, $data) =
         @{$self->event_data};
-#if (defined $data->[PITCH()] and $data->[PITCH()] == 21) { #!!!!
-#exit $data->[PITCH()]; } #!!!!!!
     for my $dest (@$destinations) {
         # Pass on the received event/message.
         output($type, $flags, $tag, $queue, $time, $myself, $dest, $data);

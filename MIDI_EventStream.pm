@@ -19,15 +19,11 @@ has config => (
 # Prepare and then enter event loop to input, filter, and dispatch MIDI events.
 sub process {
     my ($self) = @_;
-say "verb: ", $self->config->verbose;
-say "srcprts: ", Dumper(@{$self->config->source_ports});
     for my $port (@{$self->config->source_ports}) {
         connectfrom(1, $port->[0], $port->[1]);
-say 'connectfrom(1, ', $port->[0], ', ', $port->[1], ')';
     }
     for my $port (@{$self->config->destination_ports}) {
         connectto(1, $port->[0], $port->[1]);
-say 'connectto(1, ', $port->[0], ', ', $port->[1], ')';
     }
 
     $self->_run_event_loop();

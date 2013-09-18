@@ -42,10 +42,7 @@ say STDERR "state_transition: ", human_readable_st($state_transition);
     if (defined $event) {
         $event->event_data(\@alsa_event);
         $event->dispatch($self);
-#say "event: ", Dumper($event);
     } else {
-say "dispatch_next_event - no-op for $state_transition ",
-Dumper(@alsa_event);
         # No event for this state transition (i.e., no-op)
     }
 }
@@ -102,7 +99,6 @@ has _midi_event_map => (
 # Human-readable state transition - for debugging
 sub human_readable_st {
     my ($s) = @_;
-if ($s) { say "HR - s: $s" } else { say "HR - dollar s is false" }
     my ($s1, $s2) = split(/->/, $s);
     my @parts = split(/->/, $s);
     _name_for_state($s1) . ' -> ' . _name_for_state($s2);
