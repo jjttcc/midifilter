@@ -9,6 +9,22 @@ use Carp;
 
 ###  Access
 
+# The pitch value of the top note on the keyboard device being used
+has top_note_value => (
+    is       => 'ro',
+    isa      => 'Int',
+    writer   => '_set_top_note_value',
+    init_arg => undef,
+);
+
+# The pitch value of the bottom note on the keyboard device being used
+has bottom_note_value => (
+    is       => 'ro',
+    isa      => 'Int',
+    writer   => '_set_bottom_note_value',
+    init_arg => undef,
+);
+
 # The pitch value that indicates that the next note-off event will have its
 # pitch used as the program-change patch number - high meaning this pitch
 # will be added to so that 108 becomes 127
@@ -121,6 +137,10 @@ sub process {
                 $self->_set_realtime_continue($value);
             } elsif ($tag =~ /override[_-]?cc[_-]?control[_-]?number:?/) {
                 $self->_set_override_cc_control_number($value);
+            } elsif ($tag =~ /top[_-]?note:?/) {
+                $self->_set_top_note_value($value);
+            } elsif ($tag =~ /bottom[_-]?note:?/) {
+                $self->_set_bottom_note_value($value);
             } else {
                 carp "Invalid configuration line: $line";
             }

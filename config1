@@ -16,3 +16,8 @@ real_time_stop: 34
 real_time_continue: 35
 # control-change number (decimal) switch to "override" mode:
 override_cc_control_number: 7   # channel volume
+
+# MIDI note value for the bottom and top keys on the keyboard/device being
+# used
+bottom_note: 21
+top_note: 108

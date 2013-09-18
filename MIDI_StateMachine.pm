@@ -142,6 +142,8 @@ sub progchange_state_transition {
     my $type = $alsa_event->[TYPE()];
     state $override_cc_number =
         $self->config->filter_spec->override_cc_control_number;
+    state $lowest_pitch = $self->config->filter_spec->bottom_note_value;
+    state $highest_pitch = $self->config->filter_spec->top_note_value;
 if ($old_state != PROGRAM_CHANGE()) {
 say STDERR "progchange_state_transition - old state: ",
 _name_for_state($old_state);
@@ -151,9 +153,9 @@ _name_for_state($old_state);
         if ($type == NOTEOFF() or $velocity == 0) {   # i.e., NOTE-OFF
             $result = NORMAL();
             if ($$add_to_progch) {   # Note: pitch becomes program #.
-                $pitch += (127 - HIGHEST_88KEY_PITCH());    # i.e.: 108 => 127
+                $pitch += (127 - $highest_pitch);   # e.g.: 108 => 127 [88key]
             } else {
-                $pitch -= LOWEST_88KEY_PITCH();             # i.e.: 21 => 0
+                $pitch -= $lowest_pitch;    # e.g.: 21 => 0 [88 keys]
             }
             $alsa_event->[DATA()]->[PITCH()] = $pitch;
         }   # (else discard the note-on event.)

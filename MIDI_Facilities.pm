@@ -41,8 +41,6 @@ sub BANKLSB_SELECT()      { 32 }
 sub CHANNEL_VOLUME()      { 7 }
 
 # (Assumption: 88-key keyboard)
-sub LOWEST_88KEY_PITCH()  { 21  }  # Bottom note on keyboard
-sub HIGHEST_88KEY_PITCH() { 108 }  # Top note on keyboard
 
 # ALSA MIDI event-data components - array position
 sub TYPE()   { 0 }
