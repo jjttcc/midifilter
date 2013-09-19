@@ -59,6 +59,9 @@ sub dispatch {
     $client->_set_state(NORMAL());
 }
 
+
+#####  Implementation (non-public)
+
 # Next valid bank-select [MSB, LSB] value based on $currbank
 # [Specific to Motif/XS]
 sub next_bank {

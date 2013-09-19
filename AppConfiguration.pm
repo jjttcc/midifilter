@@ -53,6 +53,13 @@ has filter_spec => (
     init_arg => undef,  # not to be supplied in 'new'
 );
 
+has program_change_sample_canceled => (
+    is       => 'rw',
+    isa      => 'Bool',
+    default  => FALSE,
+    init_arg => undef,  # not to be supplied in 'new'
+);
+
 #####  Implementation
 
 has _client_number => (

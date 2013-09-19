@@ -60,12 +60,13 @@ sub PARAM()    { 4 } # Note: positions 1, 2, 3 are unused.
 sub VALUE()    { 5 }
 
 # Event-filtering processing states
-sub NORMAL()         { 0 } # Next event to be output as is
-sub OVERRIDE()       { 1 } # Command override state
-sub PROGRAM_CHANGE() { 2 } # Program change to be sent
-sub BANK_SELECT()    { 3 } # Bank select to be sent
-sub EXTERNAL_CMD()   { 4 } # External command to be executed
-sub REALTIME()       { 5 } # MIDI real-time message to be sent
+sub NORMAL()                { 0 } # Next event to be output as is
+sub OVERRIDE()              { 1 } # Command override state
+sub PROGRAM_CHANGE()        { 2 } # Program change to be sent
+sub BANK_SELECT()           { 3 } # Bank select to be sent
+sub EXTERNAL_CMD()          { 4 } # External command to be executed
+sub REALTIME()              { 5 } # MIDI real-time message to be sent
+sub PROGRAM_CHANGE_SAMPLE() { 6 } # Program change to be sent
 
 # Special constants
 sub TERMINATE_CMD() { '<terminate>' } # Request for program termination

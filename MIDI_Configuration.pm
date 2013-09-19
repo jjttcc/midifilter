@@ -28,4 +28,7 @@ sub destination_ports {}
 # Filtering-logic specifications
 sub filter_spec {}
 
+# Has program-change sample mode been canceled?
+sub program_change_sample_canceled {}
+
 1;

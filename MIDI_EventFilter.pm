@@ -11,6 +11,7 @@ use ProgramChange_MIDI_Event;
 use BankSelect_MIDI_Event;
 use ExternalCommand_MIDI_Event;
 use RealTime_MIDI_Event;
+use ProgramChangeSample_MIDI_Event;
 use Carp;
 
 # This module uses Filter::Macro so that its contents will be expanded
@@ -64,28 +65,28 @@ sub BUILD {
     # Initialize _midi_event_map -
     # key: state transition description [<state1>-><state2>]
     $midimap->{_state_tr(NORMAL(), NORMAL())} = Static_MIDI_Event->new(
-            config => $self->config);
+        config => $self->config);
     $midimap->{_state_tr(NORMAL(), OVERRIDE())} = undef;            # (no-op)
+# !!!!Note: this state transition may never be seen:
     $midimap->{_state_tr(BANK_SELECT(), NORMAL())} = Static_MIDI_Event->new(
-            config => $self->config);
+#        config => undef);   #!!!temporary test to cause core dump if it's used!!
+        config => $self->config);
     $midimap->{_state_tr(BANK_SELECT(), OVERRIDE())} = undef;       # (no-op)
     $midimap->{_state_tr(OVERRIDE(), OVERRIDE())} = undef;          # (no-op)
     $midimap->{_state_tr(OVERRIDE(), PROGRAM_CHANGE())} = undef;    # (no-op)
     $midimap->{_state_tr(OVERRIDE(), NORMAL())} = undef;            # (no-op)
     $midimap->{_state_tr(OVERRIDE(), BANK_SELECT())} =
-        BankSelect_MIDI_Event->new(
-            config => $self->config);
+        BankSelect_MIDI_Event->new(config => $self->config);
+    $midimap->{_state_tr(OVERRIDE(), PROGRAM_CHANGE_SAMPLE())} =
+        ProgramChangeSample_MIDI_Event->new(config => $self->config);
     $midimap->{_state_tr(PROGRAM_CHANGE(), NORMAL())} =
-        ProgramChange_MIDI_Event->new(
-            config => $self->config);
+        ProgramChange_MIDI_Event->new(config => $self->config);
     $midimap->{_state_tr(PROGRAM_CHANGE, OVERRIDE())} = undef;      # (no-op)
     $midimap->{_state_tr(PROGRAM_CHANGE, PROGRAM_CHANGE())} = undef;# (no-op)
     $midimap->{_state_tr(OVERRIDE(), EXTERNAL_CMD())} =
-        ExternalCommand_MIDI_Event->new(
-            config => $self->config);
+        ExternalCommand_MIDI_Event->new(config => $self->config);
     $midimap->{_state_tr(OVERRIDE(), REALTIME())} =
-        RealTime_MIDI_Event->new(config =>
-            $self->config);
+        RealTime_MIDI_Event->new(config => $self->config);
 }
 
 

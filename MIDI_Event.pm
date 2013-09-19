@@ -59,8 +59,9 @@ has event_data => (
 );
 
 has config => (
-    is  => 'ro',
-    isa => 'MIDI_Configuration',
+    is     => 'ro',
+    isa    => 'MIDI_Configuration',
+    writer => '_set_config',
 );
 
 # Dispatch the event to 'destinations'.

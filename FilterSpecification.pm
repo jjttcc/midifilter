@@ -64,6 +64,34 @@ has bank_select_down => (
     init_arg => undef,
 );
 
+# The pitch value that indicates that the next note-off event will trigger
+# program-change sampling mode
+has program_change_sample => (
+    is       => 'ro',
+    isa      => 'Int',
+    writer   => '_set_program_change_sample',
+    init_arg => undef,
+);
+
+# The number of seconds for each "patch sampling" period when in
+# program-change sampling mode
+has program_change_sample_seconds => (
+    is       => 'ro',
+    isa      => 'Int',
+    writer   => '_set_program_change_sample_seconds',
+    default  => sub { 10 },
+    init_arg => undef,
+);
+
+# The pitch value that, when in program-change sampling mode, indicates that
+# the mode is to be canceled
+has cancel_program_change_sample => (
+    is       => 'ro',
+    isa      => 'Int',
+    writer   => '_set_cancel_program_change_sample',
+    init_arg => undef,
+);
+
 # External commands to be executed - hashref keyed by pitch value
 has external_commands => (
     is       => 'ro',
@@ -118,34 +146,42 @@ sub process {
 
     my $externals = $self->external_commands;
     for my $line (@$lines) {
-        # (Example valid line: 'to: 16, 0')
         if ($line =~ /^([a-z_]+:?)\s*(\d+)\s*$/) {
+            # e.g.: 'real_time_stop: 34'
             my ($tag, $value) = ($1, $2);
-            if ($tag =~ /program[_-]change[_-]high:?/) {
+            if ($tag =~ /\bprogram[_-]change[_-]high:?\b/) {
                 $self->_set_program_change_high($value);
-            } elsif ($tag =~ /program[_-]change[_-]low:?/) {
+            } elsif ($tag =~ /\bprogram[_-]change[_-]low:?\b/) {
                 $self->_set_program_change_low($value);
-            } elsif ($tag =~ /bank[_-]select[_-]up:?/) {
+            } elsif ($tag =~ /\bbank[_-]select[_-]up:?\b/) {
                 $self->_set_bank_select_up($value);
-            } elsif ($tag =~ /bank[_-]select[_-]down:?/) {
+            } elsif ($tag =~ /\bbank[_-]select[_-]down:?\b/) {
                 $self->_set_bank_select_down($value);
-            } elsif ($tag =~ /real[_-]?time[_-]start:?/) {
+            } elsif ($tag =~ /\breal[_-]?time[_-]start:?\b/) {
                 $self->_set_realtime_start($value);
-            } elsif ($tag =~ /real[_-]?time[_-]stop:?/) {
+            } elsif ($tag =~ /\breal[_-]?time[_-]stop:?\b/) {
                 $self->_set_realtime_stop($value);
-            } elsif ($tag =~ /real[_-]?time[_-]continue:?/) {
+            } elsif ($tag =~ /\breal[_-]?time[_-]continue:?\b/) {
                 $self->_set_realtime_continue($value);
-            } elsif ($tag =~ /override[_-]?cc[_-]?control[_-]?number:?/) {
+            } elsif ($tag =~ /\boverride[_-]?cc[_-]?control[_-]?number:?\b/) {
                 $self->_set_override_cc_control_number($value);
-            } elsif ($tag =~ /top[_-]?note:?/) {
+            } elsif ($tag =~ /\btop[_-]?note:?\b/) {
                 $self->_set_top_note_value($value);
-            } elsif ($tag =~ /bottom[_-]?note:?/) {
+            } elsif ($tag =~ /\bbottom[_-]?note:?\b/) {
                 $self->_set_bottom_note_value($value);
+            } elsif ($tag =~ /\bprogram[_-]change[_-]sample:?\b/) {
+                $self->_set_program_change_sample($value);
+            } elsif ($tag =~ /\bprogram[_-]change[_-]sample[_-]seconds:?\b/) {
+                if ($value == 0) { $value = 1; }    # 0 is not allowed
+                $self->_set_program_change_sample_seconds($value);
+            } elsif ($tag =~ /\bcancel_program[_-]change[_-]sample:?\b/) {
+                $self->_set_cancel_program_change_sample($value);
             } else {
                 carp "Invalid configuration line: $line";
             }
         }
         if ($line =~ /^([a-z_]+:?)\s*(\d+)\s+(.*)$/) {
+            # e.g.: 'external_cmd: 21 echo test'
             my ($tag, $value, $command) = ($1, $2, $3);
             if ($tag =~ /external[_-]cmd:?/) {
                 $externals->{$value} = $command;

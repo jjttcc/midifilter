@@ -19,13 +19,15 @@ sub DEBUG() { 1 }
 
 # valid state transitions - hash reference
 my $valid_state_transitions = {
-    NORMAL()         => [OVERRIDE, NORMAL],
-    BANK_SELECT()    => [OVERRIDE, NORMAL],
-    REALTIME()       => [OVERRIDE, NORMAL],
-    OVERRIDE()       => [OVERRIDE, PROGRAM_CHANGE, NORMAL, BANK_SELECT,
-                        EXTERNAL_CMD],
-    PROGRAM_CHANGE() => [PROGRAM_CHANGE, NORMAL, OVERRIDE],
-    EXTERNAL_CMD()   => [OVERRIDE, NORMAL],
+    NORMAL()                => [OVERRIDE, NORMAL],
+#   BANK_SELECT()           => [OVERRIDE, NORMAL],
+    BANK_SELECT()           => [NORMAL], #!!!theory: BS -> OVERRIDE impossible
+    PROGRAM_CHANGE_SAMPLE() => [NORMAL],
+    REALTIME()              => [OVERRIDE, NORMAL],
+    OVERRIDE()              => [OVERRIDE, PROGRAM_CHANGE, NORMAL, BANK_SELECT,
+                               PROGRAM_CHANGE_SAMPLE, EXTERNAL_CMD],
+    PROGRAM_CHANGE()        => [PROGRAM_CHANGE, NORMAL, OVERRIDE],
+    EXTERNAL_CMD()          => [OVERRIDE, NORMAL],
 };
 
 
@@ -97,10 +99,14 @@ sub override_state_transition {
     for my $value (keys %$external_commands) {
         $is_extcmd->{$value} = TRUE;
     }
-    state $is_rt_pitch;
-    $is_rt_pitch->{$self->config->filter_spec->realtime_start} = TRUE;
-    $is_rt_pitch->{$self->config->filter_spec->realtime_stop} = TRUE;
-    $is_rt_pitch->{$self->config->filter_spec->realtime_continue} = TRUE;
+    state $is_rt;
+    $is_rt->{$self->config->filter_spec->realtime_start} = TRUE;
+    $is_rt->{$self->config->filter_spec->realtime_stop} = TRUE;
+    $is_rt->{$self->config->filter_spec->realtime_continue} = TRUE;
+    state $is_pc_sample->{
+        $self->config->filter_spec->program_change_sample} = TRUE;
+    state $is_cancel_pc_sample->{
+        $self->config->filter_spec->cancel_program_change_sample} = TRUE;
     my $result = $old_state;
     my ($pitch, $velocity);
     my ($param);
@@ -115,8 +121,15 @@ sub override_state_transition {
                 $result = BANK_SELECT();
             } elsif ($is_extcmd->{$pitch}) {
                 $result = EXTERNAL_CMD();
-            } elsif ($is_rt_pitch->{$pitch}) {
+            } elsif ($is_rt->{$pitch}) {
                 $result = REALTIME();
+            } elsif ($is_pc_sample->{$pitch}) {
+                $result = PROGRAM_CHANGE_SAMPLE();
+say "state changed to PROGRAM_CHANGE_SAMPLE";
+            } elsif ($is_cancel_pc_sample->{$pitch}) {
+                $result = PROGRAM_CHANGE_SAMPLE();
+                $self->config->program_change_sample_canceled(TRUE);
+say "PROGRAM_CHANGE_SAMPLE canceled!!!!";
             } else {
                 $result = NORMAL();  # override mode canceled
             }
@@ -171,12 +184,13 @@ _name_for_state($old_state);
 sub _name_for_state {
     my ($s) = @_;
     state $name_for = {
-        NORMAL()         => 'NORMAL',
-        OVERRIDE()       => 'OVERRIDE',
-        PROGRAM_CHANGE() => 'PROGRAM_CHANGE',
-        BANK_SELECT()    => 'BANK_SELECT',
-        EXTERNAL_CMD()   => 'EXTERNAL_CMD',
-        REALTIME()       => 'REALTIME',
+        NORMAL()                => 'NORMAL',
+        OVERRIDE()              => 'OVERRIDE',
+        PROGRAM_CHANGE()        => 'PROGRAM_CHANGE',
+        BANK_SELECT()           => 'BANK_SELECT',
+        EXTERNAL_CMD()          => 'EXTERNAL_CMD',
+        REALTIME()              => 'REALTIME',
+        PROGRAM_CHANGE_SAMPLE() => 'PROGRAM_CHANGE_SAMPLE',
     };
     $name_for->{$s};
 }
