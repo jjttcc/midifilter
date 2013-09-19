@@ -10,6 +10,8 @@ use Data::Dumper;
 use feature qw(state);
 use constant::boolean;
 use MIDI_Facilities;
+use GeneralMidi;
+use Announcer;
 use threads;
 use threads::shared;
 
@@ -24,7 +26,6 @@ my $stop_program_change_sampling :shared = FALSE;
 sub dispatch {
     my ($self, $client) = @_;
 
-#    my $config :shared = $self->config;
     if (not $can_use_threads) {
         say "Warning: threads are not available, which means the " .
             "program_change_sample\nfeature cannot be used";
@@ -32,7 +33,6 @@ sub dispatch {
         return;
     }
     $client->_set_state(NORMAL());
-say "[PCS] pcsc: ", $self->config->program_change_sample_canceled;
     if ($self->config->program_change_sample_canceled) {
         # User has ordered PC sampling canceled - force thread to end:
         $stop_program_change_sampling = TRUE;
@@ -48,7 +48,7 @@ say "[PCS] pcsc: ", $self->config->program_change_sample_canceled;
 sub handle_program_change_mode {
     my ($self) = @_;
 
-say "handle_program_change_mode called";
+    state $announcer = Announcer->new();
     my $filter_spec = $self->config->filter_spec;
     my $sleep_seconds = $filter_spec->program_change_sample_seconds;
     my $current_program = 0;
@@ -62,9 +62,10 @@ say "handle_program_change_mode called";
     my (undef, $flags, $tag,  undef, undef, undef, undef, $data) =
         @{$self->event_data};
     my ($channel, $pitch) = @$data;
-say "sampling_seconds: $sampling_seconds";
     while (not $stop_program_change_sampling and $current_program != 128) {
 say "current_program: $current_program [tid: ", threads->self->tid(), ']';
+        my $instrument = $instrument_name_for->{$current_program};
+        $announcer->announce("Patch $current_program: $instrument");
         for my $dest (@$destinations) {
             output(PGMCHANGE(), $flags, $tag, $queue, $time, $myself, $dest,
                 [$channel, 0, 0, 0, 0, $current_program]);

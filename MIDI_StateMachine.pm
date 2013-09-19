@@ -125,11 +125,9 @@ sub override_state_transition {
                 $result = REALTIME();
             } elsif ($is_pc_sample->{$pitch}) {
                 $result = PROGRAM_CHANGE_SAMPLE();
-say "state changed to PROGRAM_CHANGE_SAMPLE";
             } elsif ($is_cancel_pc_sample->{$pitch}) {
                 $result = PROGRAM_CHANGE_SAMPLE();
                 $self->config->program_change_sample_canceled(TRUE);
-say "PROGRAM_CHANGE_SAMPLE canceled!!!!";
             } else {
                 $result = NORMAL();  # override mode canceled
             }
