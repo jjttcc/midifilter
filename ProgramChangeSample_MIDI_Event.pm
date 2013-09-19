@@ -19,6 +19,7 @@ my $can_use_threads = eval 'use threads; 1';
 
 extends 'MIDI_Event';
 
+my $cancel_program_change_sampling :shared = FALSE;
 my $stop_program_change_sampling :shared = FALSE;
 
 #####  Interface implementation (public)
@@ -33,10 +34,17 @@ sub dispatch {
         return;
     }
     $client->_set_state(NORMAL());
-    if ($self->config->program_change_sample_canceled) {
-        # User has ordered PC sampling canceled - force thread to end:
-        $stop_program_change_sampling = TRUE;
-    } else {
+say "spcs, pcss: ", $stop_program_change_sampling, ", ",
+$self->config->program_change_sample_stopped;
+    my $continued = $stop_program_change_sampling and not
+        $self->config->program_change_sample_stopped;
+    $cancel_program_change_sampling =
+        $self->config->program_change_sample_canceled;
+    $stop_program_change_sampling =
+        $self->config->program_change_sample_stopped;
+    if (not $continued and not $cancel_program_change_sampling and
+            not $stop_program_change_sampling) {
+say "start thread for ", Dumper($self);
         my $thread = threads->create(\&handle_program_change_mode, $self);
         $thread->detach();
     }
@@ -44,6 +52,25 @@ sub dispatch {
 
 
 #####  Implementation (non-public)
+
+sub pause {
+    my ($self, $seconds) = @_;
+
+    my $slept = 0;
+    # Sleep 1 second at a time as long as we've not slept enough and
+    # conditions require it.
+    while ($slept < $seconds and not $cancel_program_change_sampling or
+            $stop_program_change_sampling) {
+        sleep 1;
+        if (not $stop_program_change_sampling) {
+            ++$slept;
+        } else {
+            # If $stop_program_change_sampling, don't increment $slept, so
+            # that this loop continues until $stop_program_change_sampling
+            # gets reset to FALSE in the main thread.
+        }
+    }
+}
 
 sub handle_program_change_mode {
     my ($self) = @_;
@@ -62,7 +89,7 @@ sub handle_program_change_mode {
     my (undef, $flags, $tag,  undef, undef, undef, undef, $data) =
         @{$self->event_data};
     my ($channel, $pitch) = @$data;
-    while (not $stop_program_change_sampling and $current_program != 128) {
+    while (not $cancel_program_change_sampling and $current_program != 128) {
 say "current_program: $current_program [tid: ", threads->self->tid(), ']';
         my $instrument = $instrument_name_for->{$current_program};
         $announcer->announce("Patch $current_program: $instrument");
@@ -71,11 +98,7 @@ say "current_program: $current_program [tid: ", threads->self->tid(), ']';
                 [$channel, 0, 0, 0, 0, $current_program]);
         }
         ++$current_program;
-        sleep $sleep_seconds;
-    }
-    if ($stop_program_change_sampling) {
-        # reset/clean-up
-        $stop_program_change_sampling = FALSE;
+        $self->pause($sleep_seconds);
     }
     $current_program = 0;
 }

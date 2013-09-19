@@ -3,6 +3,7 @@ package FilterSpecification;
 
 use Mouse;
 use Modern::Perl;
+use constant::boolean;
 use Data::Dumper;
 use Carp;
 
@@ -92,6 +93,50 @@ has cancel_program_change_sample => (
     init_arg => undef,
 );
 
+# The pitch value that, when in program-change sampling mode, indicates that
+# the mode is to be stopped
+has stop_program_change_sample => (
+    is       => 'ro',
+    isa      => 'Int',
+    writer   => '_set_stop_program_change_sample',
+    init_arg => undef,
+);
+
+# The pitch value that, when in program-change sampling mode, indicates that
+# the mode is to be continued
+has continue_program_change_sample => (
+    is       => 'ro',
+    isa      => 'Int',
+    writer   => '_set_continue_program_change_sample',
+    init_arg => undef,
+);
+
+=cut=
+# Has program-change sample mode been canceled?
+has program_change_sample_canceled => (
+    is       => 'rw',
+    isa      => 'Bool',
+    default  => FALSE,
+    init_arg => undef,  # not to be supplied in 'new'
+);
+
+# Has program-change sample mode been stopped?
+has program_change_sample_stopped => (
+    is       => 'rw',
+    isa      => 'Bool',
+    default  => FALSE,
+    init_arg => undef,  # not to be supplied in 'new'
+);
+
+# Has program-change sample mode been continued?
+has program_change_sample_continued => (
+    is       => 'rw',
+    isa      => 'Bool',
+    default  => FALSE,
+    init_arg => undef,  # not to be supplied in 'new'
+);
+=cut=
+
 # External commands to be executed - hashref keyed by pitch value
 has external_commands => (
     is       => 'ro',
@@ -176,6 +221,10 @@ sub process {
                 $self->_set_program_change_sample_seconds($value);
             } elsif ($tag =~ /\bcancel_program[_-]change[_-]sample:?\b/) {
                 $self->_set_cancel_program_change_sample($value);
+            } elsif ($tag =~ /\bstop_program[_-]change[_-]sample:?\b/) {
+                $self->_set_stop_program_change_sample($value);
+            } elsif ($tag =~ /\bcontinue_program[_-]change[_-]sample:?\b/) {
+                $self->_set_continue_program_change_sample($value);
             } else {
                 carp "Invalid configuration line: $line";
             }

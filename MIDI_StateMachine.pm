@@ -103,10 +103,6 @@ sub override_state_transition {
     $is_rt->{$self->config->filter_spec->realtime_start} = TRUE;
     $is_rt->{$self->config->filter_spec->realtime_stop} = TRUE;
     $is_rt->{$self->config->filter_spec->realtime_continue} = TRUE;
-    state $is_pc_sample->{
-        $self->config->filter_spec->program_change_sample} = TRUE;
-    state $is_cancel_pc_sample->{
-        $self->config->filter_spec->cancel_program_change_sample} = TRUE;
     my $result = $old_state;
     my ($pitch, $velocity);
     my ($param);
@@ -123,19 +119,48 @@ sub override_state_transition {
                 $result = EXTERNAL_CMD();
             } elsif ($is_rt->{$pitch}) {
                 $result = REALTIME();
-            } elsif ($is_pc_sample->{$pitch}) {
-                $result = PROGRAM_CHANGE_SAMPLE();
-            } elsif ($is_cancel_pc_sample->{$pitch}) {
-                $result = PROGRAM_CHANGE_SAMPLE();
-                $self->config->program_change_sample_canceled(TRUE);
             } else {
-                $result = NORMAL();  # override mode canceled
+                # Remaining override -> ... transitions
+                $result = $self->override_state_transition2($pitch);
             }
-        } else {
-            # no-op: Discard NOTE-ON event.
         }
+    }
+    $result;
+}
+
+# Helper to override_state_transition - i.e., does the remaining work.
+# Returns the new state.
+sub override_state_transition2 {
+    my ($self, $pitch) = @_;
+    my $result;
+
+    state $is_pc_sample->{
+        $self->config->filter_spec->program_change_sample} = TRUE;
+    state $is_cancel_pc_sample->{
+        $self->config->filter_spec->cancel_program_change_sample} = TRUE;
+    state $is_stopped_pc_sample->{
+        $self->config->filter_spec->stop_program_change_sample} = TRUE;
+    state $is_continued_pc_sample->{
+        $self->config->filter_spec->continue_program_change_sample} = TRUE;
+    # reset - not canceled, not stopped:
+    $self->config->program_change_sample_canceled(FALSE);
+    $self->config->program_change_sample_stopped(FALSE);
+    if ($is_pc_sample->{$pitch}) {
+        $result = PROGRAM_CHANGE_SAMPLE();
+# !!!        $self->config->program_change_sample_continued(FALSE);
+    } elsif ($is_cancel_pc_sample->{$pitch}) {
+        $result = PROGRAM_CHANGE_SAMPLE();
+        $self->config->program_change_sample_canceled(TRUE);
+    } elsif ($is_stopped_pc_sample->{$pitch}) {
+        $result = PROGRAM_CHANGE_SAMPLE();
+        $self->config->program_change_sample_stopped(TRUE);
+    } elsif ($is_continued_pc_sample->{$pitch}) {
+        $result = PROGRAM_CHANGE_SAMPLE();
+        $self->config->program_change_sample_stopped(FALSE);
+# !!!!perhaps not needed?:
+#$self->config->program_change_sample_continued(TRUE);
     } else {
-        # not a note event - discard
+        $result = NORMAL();  # override mode canceled
     }
     $result;
 }

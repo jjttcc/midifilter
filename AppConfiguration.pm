@@ -60,6 +60,14 @@ has program_change_sample_canceled => (
     init_arg => undef,  # not to be supplied in 'new'
 );
 
+# Has program-change sample mode been stopped?
+has program_change_sample_stopped => (
+    is       => 'rw',
+    isa      => 'Bool',
+    default  => FALSE,
+    init_arg => undef,  # not to be supplied in 'new'
+);
+
 #####  Implementation
 
 has _client_number => (

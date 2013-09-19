@@ -24,5 +24,7 @@ top_note: 108
 
 program_change_sample: 98           # tiggers program-change sample mode
 cancel_program_change_sample: 99    # cancels program-change sample mode
-program_change_sample_seconds: 1
-#program_change_sample_seconds: 60   # PC sample: seconds for each patch
+program_change_sample_seconds: 2
+#program_change_sample_seconds: 60	 # PC sample: seconds for each patch
+stop_program_change_sample: 100    	# stops program-change sample mode
+continue_program_change_sample: 101 # continues program-change sample mode
