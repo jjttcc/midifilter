@@ -111,32 +111,6 @@ has continue_program_change_sample => (
     init_arg => undef,
 );
 
-=cut=
-# Has program-change sample mode been canceled?
-has program_change_sample_canceled => (
-    is       => 'rw',
-    isa      => 'Bool',
-    default  => FALSE,
-    init_arg => undef,  # not to be supplied in 'new'
-);
-
-# Has program-change sample mode been stopped?
-has program_change_sample_stopped => (
-    is       => 'rw',
-    isa      => 'Bool',
-    default  => FALSE,
-    init_arg => undef,  # not to be supplied in 'new'
-);
-
-# Has program-change sample mode been continued?
-has program_change_sample_continued => (
-    is       => 'rw',
-    isa      => 'Bool',
-    default  => FALSE,
-    init_arg => undef,  # not to be supplied in 'new'
-);
-=cut=
-
 # External commands to be executed - hashref keyed by pitch value
 has external_commands => (
     is       => 'ro',
@@ -186,8 +160,6 @@ sub process {
     my ($self, $lines) = @_;
     if (not defined $lines) { croak "process: argument not valid"; }
     my @result = ([], []);
-#Readonly::Scalar my $FROM => 0;
-#Readonly::Scalar my $TO   => 1;
 
     my $externals = $self->external_commands;
     for my $line (@$lines) {

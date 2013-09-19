@@ -34,17 +34,14 @@ sub dispatch {
         return;
     }
     $client->_set_state(NORMAL());
-say "spcs, pcss: ", $stop_program_change_sampling, ", ",
-$self->config->program_change_sample_stopped;
-    my $continued = $stop_program_change_sampling and not
-        $self->config->program_change_sample_stopped;
+    my $continued = ($stop_program_change_sampling and
+        not $self->config->program_change_sample_stopped);
     $cancel_program_change_sampling =
         $self->config->program_change_sample_canceled;
     $stop_program_change_sampling =
         $self->config->program_change_sample_stopped;
     if (not $continued and not $cancel_program_change_sampling and
             not $stop_program_change_sampling) {
-say "start thread for ", Dumper($self);
         my $thread = threads->create(\&handle_program_change_mode, $self);
         $thread->detach();
     }
@@ -90,7 +87,6 @@ sub handle_program_change_mode {
         @{$self->event_data};
     my ($channel, $pitch) = @$data;
     while (not $cancel_program_change_sampling and $current_program != 128) {
-say "current_program: $current_program [tid: ", threads->self->tid(), ']';
         my $instrument = $instrument_name_for->{$current_program};
         $announcer->announce("Patch $current_program: $instrument");
         for my $dest (@$destinations) {
