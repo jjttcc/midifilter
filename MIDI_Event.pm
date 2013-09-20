@@ -1,4 +1,5 @@
 package MIDI_Event;
+# Copyright 2013  Jim Cochrane - GNU GPL, verson 2
 # Self-dispatching ALSA-MIDI events, dispatched according to the class type
 # (subtype)
 

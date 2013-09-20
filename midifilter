@@ -1,5 +1,6 @@
 #!/usr/bin/env perl
-# MIDI::ALSA basic experiment 1
+# ALSA MIDI filter
+# Copyright 2013  Jim Cochrane - GNU GPL, verson 2
 
 use Modern::Perl;
 use constant::boolean;

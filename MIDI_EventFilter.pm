@@ -1,4 +1,5 @@
 package MIDI_EventFilter;
+# Copyright 2013  Jim Cochrane - GNU GPL, verson 2
 # MIDI event filtering logic
 
 use Mouse;
