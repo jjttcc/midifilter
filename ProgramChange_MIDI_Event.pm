@@ -24,7 +24,8 @@ sub dispatch {
     state $queue = undef;
     state $time = 0;
     state $pc = PGMCHANGE();
-    state $announcer = Announcer->new();
+say "scf->announcer: ", Dumper($self->config->filter_spec->announcer);
+    state $announcer = $self->config->filter_spec->announcer;
     # (Assume: queue, time, source, destination [undefs] are not needed:)
     my (undef, $flags, $tag,  undef, undef, undef, undef, $data) =
         @{$self->event_data};

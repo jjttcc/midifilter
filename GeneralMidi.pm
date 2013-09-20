@@ -1,7 +1,7 @@
 package GeneralMidi;
 # General MIDI instruments
 
-use Moose;
+use Mouse;
 use Modern::Perl;
 use feature qw(state);
 use Filter::Macro;  # 'use GeneralMidi' provides inline expansion.

@@ -6,6 +6,7 @@ use Modern::Perl;
 use constant::boolean;
 use Data::Dumper;
 use Carp;
+use Announcer;
 
 
 ###  Access
@@ -152,6 +153,13 @@ has override_cc_control_number => (
     init_arg => undef,
 );
 
+# Path of program to execute for "announcements"
+has announcer => (
+    is       => 'ro',
+    writer   => '_set_announcer',
+    init_arg => undef,
+);
+
 ###  Basic operations
 
 # Parse and process the specified $lines (ArrayRef) and make the result
@@ -200,8 +208,13 @@ sub process {
             } else {
                 carp "Invalid configuration line: $line";
             }
-        }
-        if ($line =~ /^([a-z_]+:?)\s*(\d+)\s+(.*)$/) {
+        } elsif ($line =~ /^([a-z_]+:?)\s*(\w+)$/) {
+            # e.g.: 'announcer: program'
+            my ($tag, $value) = ($1, $2);
+            if ($tag =~ /\bannouncer:?\b/) {
+                $self->_set_announcer(Announcer->new(announce_prog => $value));
+            }
+        } elsif ($line =~ /^([a-z_]+:?)\s*(\d+)\s+(.*)$/) {
             # e.g.: 'external_cmd: 21 echo test'
             my ($tag, $value, $command) = ($1, $2, $3);
             if ($tag =~ /external[_-]cmd:?/) {

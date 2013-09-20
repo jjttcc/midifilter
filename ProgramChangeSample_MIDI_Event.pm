@@ -72,7 +72,7 @@ sub pause {
 sub handle_program_change_mode {
     my ($self) = @_;
 
-    state $announcer = Announcer->new();
+    state $announcer = $self->config->filter_spec->announcer;
     my $filter_spec = $self->config->filter_spec;
     my $sleep_seconds = $filter_spec->program_change_sample_seconds;
     my $current_program = 0;
