@@ -24,7 +24,6 @@ sub dispatch {
     state $queue = undef;
     state $time = 0;
     state $pc = PGMCHANGE();
-say "scf->announcer: ", Dumper($self->config->filter_spec->announcer);
     state $announcer = $self->config->filter_spec->announcer;
     # (Assume: queue, time, source, destination [undefs] are not needed:)
     my (undef, $flags, $tag,  undef, undef, undef, undef, $data) =
@@ -33,7 +32,7 @@ say "scf->announcer: ", Dumper($self->config->filter_spec->announcer);
     # ($pitch becomes an alias for program/patch number.)
 
     my $instrument = $instrument_name_for->{$pitch};
-    $announcer->announce("Patch $pitch: $instrument");
+    $announcer->announce("$pitch: $instrument");
     for my $dest (@{$destinations}) {
         output(PGMCHANGE(), $flags, $tag, $queue, $time, $myself, $dest,
             [$channel, 0, 0, 0, 0, $pitch]);

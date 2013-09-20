@@ -41,16 +41,6 @@ sub dispatch {
     }
     for my $dest (@$destinations) {
         # Construct and send the real-time message.
-#        my @msg = ($msg_type, undef, undef, undef, undef, undef, $dest, []);
-#        output(@msg);
-#        output($msg_type, undef, undef, undef, undef, undef, $dest, []);
-my ($songpos, $postick, $postime, $syncpos) = (20, 33, 34, 39);
-#SND_SEQ_EVENT_SETPOS_TICK: 33
-#SND_SEQ_EVENT_SETPOS_TIME: 34
-#SND_SEQ_EVENT_SONGPOS: 20
-#SND_SEQ_EVENT_SYNC_POS: 39
-#output($songpos, 1, 1, 1, 1, 1, $dest, [1, 1, 1, 1, 1, 1]);
-#output($songpos, undef, undef, undef, undef, undef, $dest, [0, 0, 0, 0, 1, 1]);
         output($msg_type, undef, undef, undef, undef, undef, $dest, []);
     }
     $client->_set_state(NORMAL());

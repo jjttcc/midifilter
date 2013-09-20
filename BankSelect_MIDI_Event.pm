@@ -9,6 +9,7 @@ use feature qw(state);
 use Carp;
 use Data::Dumper;
 use MIDI_Facilities;
+use Announcer;
 
 
 extends 'MIDI_Event';
@@ -28,6 +29,7 @@ sub dispatch {
     state $queue = undef;
     state $time = 0;
     state $bank_select_down = $self->config->filter_spec->bank_select_down;
+    state $announcer = $self->config->filter_spec->announcer;
     # (Assume: queue, time, source, destination [undefs] are not needed:)
     my (undef, $flags, $tag,  undef, undef, undef, undef, $data) =
         @{$self->event_data};
@@ -37,8 +39,9 @@ sub dispatch {
     } else {
         $current_bank = next_bank($current_bank);
     }
+    my ($msb, $lsb) = @$current_bank;
+    $announcer->announce("Bank $msb, $lsb");
     for my $dest (@$destinations) {
-        my ($msb, $lsb) = @$current_bank;
         # Construct and send the MSB message.
         my @bankch_msb = (CONTROLLER(), $flags, $tag,
             $queue, $time, $myself, $dest,

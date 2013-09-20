@@ -88,7 +88,7 @@ sub handle_program_change_mode {
     my ($channel, $pitch) = @$data;
     while (not $cancel_program_change_sampling and $current_program != 128) {
         my $instrument = $instrument_name_for->{$current_program};
-        $announcer->announce("Patch $current_program: $instrument");
+        $announcer->announce("$current_program: $instrument");
         for my $dest (@$destinations) {
             output(PGMCHANGE(), $flags, $tag, $queue, $time, $myself, $dest,
                 [$channel, 0, 0, 0, 0, $current_program]);
