@@ -9,6 +9,7 @@ use feature qw(state);
 use Carp;
 use Data::Dumper;
 use MIDI_Facilities;
+use Announcer;
 
 
 extends 'MIDI_Event';
@@ -19,16 +20,19 @@ extends 'MIDI_Event';
 sub dispatch {
     my ($self, $client) = @_;
     state $commands = $self->config->filter_spec->external_commands;
+    state $announcer = $self->config->filter_spec->announcer;
     my $data = $self->data;
-    # Do we need the channel?
-    my ($channel, $pitch) = @$data;
+    my (undef, $pitch) = @$data;
     my $cmd = $commands->{$pitch};
     if ($cmd) {
         if ($cmd eq TERMINATE_CMD()) {
             exit 0;
+        } elsif ($cmd eq REPORT_CFG_CMD()) {
+            $announcer->announce($self->config->filter_spec_report);
+        } else {
+            if ($cmd !~ /&\s$/) { $cmd .= ' &'; }
+            system($cmd);
         }
-        if ($cmd !~ /&\s$/) { $cmd .= ' &'; }
-        system($cmd);
     }
     $client->_set_state(NORMAL());
 }

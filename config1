@@ -10,7 +10,8 @@ bank_select_down: 105       # pitch to trigger bank-select - decrement
 #external_cmd: 21 pkill -STOP -f rosegarden
 external_cmd: 21 echo midifilter test succeeded|mutt -s 'midifilter test' me_me_me@gmail.com
 external_cmd: 22 echo midifilter test succeeded at `date`>/tmp/mftest$$
-external_cmd: 72 <terminate>    # Special "command": terminate midifilter
+external_cmd: 72 <terminate>            # Special cmd: terminate midifilter
+external_cmd: 88 <filter-config-report> # Special cmd: trigger spec report
 real_time_start: 33
 real_time_stop: 34
 real_time_continue: 35
@@ -25,8 +26,8 @@ top_note: 108
 program_change_sample: 98           # tiggers program-change sample mode
 cancel_program_change_sample: 99    # cancels program-change sample mode
 program_change_sample_seconds: 5
-#program_change_sample_seconds: 60	 # PC sample: seconds for each patch
-stop_program_change_sample: 100    	# stops program-change sample mode
+#program_change_sample_seconds: 60   # PC sample: seconds for each patch
+stop_program_change_sample: 100     # stops program-change sample mode
 continue_program_change_sample: 101 # continues program-change sample mode
 
 announcer: espeak

@@ -15,6 +15,8 @@ extends 'MIDI_Configuration';
 
 #####  Public interface
 
+###  Access
+
 # MIDI event stream
 has midi_stream => (
     is      => 'ro',
@@ -68,7 +70,34 @@ has program_change_sample_stopped => (
     init_arg => undef,  # not to be supplied in 'new'
 );
 
-#####  Implementation
+
+# Informally-formatted report on the current settings of 'filter_spec'
+sub filter_spec_report {
+    my ($self) = @_;
+    my $result = '';
+    my $fs_meta = $self->filter_spec->meta;
+    my @attrs = $fs_meta->get_all_attributes;
+    for my $attr (@attrs) {
+        my $name = $attr->name;
+        if ($name eq 'announcer') {
+            next;   # Skip 'announcer' attribute.
+        }
+        my $value = $attr->get_value($self->filter_spec);
+        if (ref $value eq 'HASH') {
+            $result .= $name . ":\n";
+            for my $k (keys %$value) {
+                my $v = $value->{$k};
+                $result .= '  ' . $k . ': ' . $v . "\n";
+            }
+        } else {
+            $result .= $name . ': ' . $value . "\n";
+        }
+    }
+    $result;
+}
+
+
+#####  Implementation (non-public)
 
 has _client_number => (
     is       => 'ro',
