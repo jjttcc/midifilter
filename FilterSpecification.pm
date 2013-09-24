@@ -160,6 +160,13 @@ has announcer => (
     init_arg => undef,
 );
 
+sub non_pitch_spec {
+    {
+        'override_cc_control_number'    => TRUE,
+        'program_change_sample_seconds' => TRUE,
+    }
+}
+
 ###  Basic operations
 
 # Parse and process the specified $lines (ArrayRef) and make the result

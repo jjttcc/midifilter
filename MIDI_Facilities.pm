@@ -4,7 +4,6 @@ package MIDI_Facilities;
 use Filter::Macro;  # 'use MIDI_Facilities' provides inline expansion.
 use Modern::Perl;
 
-use Music::Note;
 use MIDI::ALSA qw(
     SND_SEQ_EVENT_PORT_UNSUBSCRIBED
     SND_SEQ_EVENT_NOTE

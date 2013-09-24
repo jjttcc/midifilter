@@ -6,6 +6,7 @@ use Modern::Perl;
 use constant::boolean;
 use File::Basename qw(basename);
 use Readonly;
+use Music::Note;
 use Carp;
 use Data::Dumper;
 
@@ -90,7 +91,13 @@ sub filter_spec_report {
                 $result .= '  ' . $k . ': ' . $v . "\n";
             }
         } else {
-            $result .= $name . ': ' . $value . "\n";
+            $result .= $name . ': ' . $value;
+            if (not $self->filter_spec->non_pitch_spec->{$name}) {
+                # $value is supposedly a pitch.
+                my $note = Music::Note->new($value, 'midinum');
+                $result .= ', ' . $note->format('midi');
+            }
+            $result .= "\n";
         }
     }
     $result;

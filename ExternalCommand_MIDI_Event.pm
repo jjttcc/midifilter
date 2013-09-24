@@ -28,7 +28,8 @@ sub dispatch {
         if ($cmd eq TERMINATE_CMD()) {
             exit 0;
         } elsif ($cmd eq REPORT_CFG_CMD()) {
-            $announcer->announce($self->config->filter_spec_report);
+            my $report = $self->config->filter_spec_report;
+            $announcer->announce($report);
         } else {
             if ($cmd !~ /&\s$/) { $cmd .= ' &'; }
             system($cmd);
