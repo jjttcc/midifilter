@@ -26,6 +26,8 @@ sub dispatch {
     my $cmd = $commands->{$pitch};
     if ($cmd) {
         if ($cmd eq TERMINATE_CMD()) {
+            $announcer->announce("Terminating " .
+                $self->config->application_name);
             exit 0;
         } elsif ($cmd eq REPORT_CFG_CMD()) {
             my $report = $self->config->filter_spec_report;

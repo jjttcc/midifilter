@@ -7,6 +7,7 @@ use constant::boolean;
 use Data::Dumper;
 use Carp;
 use Announcer;
+use TranspositionSpecification;
 
 
 ###  Access
@@ -112,6 +113,15 @@ has continue_program_change_sample => (
     init_arg => undef,
 );
 
+# Set of configured transposition specifications
+has transposition_specs => (
+    is => 'ro',
+    isa => 'HashRef[TranspositionSpecification]',
+    writer => '_set_transposition_spec',
+    default => sub { {} },
+    init_arg => undef,
+);
+
 # External commands to be executed - hashref keyed by pitch value
 has external_commands => (
     is       => 'ro',
@@ -176,45 +186,11 @@ sub process {
     if (not defined $lines) { croak "process: argument not valid"; }
     my @result = ([], []);
 
-    my $externals = $self->external_commands;
     for my $line (@$lines) {
         if ($line =~ /^([a-z_]+:?)\s*(\d+)\s*$/) {
             # e.g.: 'real_time_stop: 34'
             my ($tag, $value) = ($1, $2);
-            if ($tag =~ /\bprogram[_-]change[_-]high:?\b/) {
-                $self->_set_program_change_high($value);
-            } elsif ($tag =~ /\bprogram[_-]change[_-]low:?\b/) {
-                $self->_set_program_change_low($value);
-            } elsif ($tag =~ /\bbank[_-]select[_-]up:?\b/) {
-                $self->_set_bank_select_up($value);
-            } elsif ($tag =~ /\bbank[_-]select[_-]down:?\b/) {
-                $self->_set_bank_select_down($value);
-            } elsif ($tag =~ /\breal[_-]?time[_-]start:?\b/) {
-                $self->_set_realtime_start($value);
-            } elsif ($tag =~ /\breal[_-]?time[_-]stop:?\b/) {
-                $self->_set_realtime_stop($value);
-            } elsif ($tag =~ /\breal[_-]?time[_-]continue:?\b/) {
-                $self->_set_realtime_continue($value);
-            } elsif ($tag =~ /\boverride[_-]?cc[_-]?control[_-]?number:?\b/) {
-                $self->_set_override_cc_control_number($value);
-            } elsif ($tag =~ /\btop[_-]?note:?\b/) {
-                $self->_set_top_note_value($value);
-            } elsif ($tag =~ /\bbottom[_-]?note:?\b/) {
-                $self->_set_bottom_note_value($value);
-            } elsif ($tag =~ /\bprogram[_-]change[_-]sample:?\b/) {
-                $self->_set_program_change_sample($value);
-            } elsif ($tag =~ /\bprogram[_-]change[_-]sample[_-]seconds:?\b/) {
-                if ($value == 0) { $value = 1; }    # 0 is not allowed
-                $self->_set_program_change_sample_seconds($value);
-            } elsif ($tag =~ /\bcancel_program[_-]change[_-]sample:?\b/) {
-                $self->_set_cancel_program_change_sample($value);
-            } elsif ($tag =~ /\bstop_program[_-]change[_-]sample:?\b/) {
-                $self->_set_stop_program_change_sample($value);
-            } elsif ($tag =~ /\bcontinue_program[_-]change[_-]sample:?\b/) {
-                $self->_set_continue_program_change_sample($value);
-            } else {
-                carp "Invalid configuration line: $line";
-            }
+            $self->process_one_numeric_argument($tag, $value, $line);
         } elsif ($line =~ /^([a-z_]+:?)\s*(\w+)$/) {
             # e.g.: 'announcer: program'
             my ($tag, $value) = ($1, $2);
@@ -224,12 +200,74 @@ sub process {
         } elsif ($line =~ /^([a-z_]+:?)\s*(\d+)\s+(.*)$/) {
             # e.g.: 'external_cmd: 21 echo test'
             my ($tag, $value, $command) = ($1, $2, $3);
-            if ($tag =~ /external[_-]cmd:?/) {
-                $externals->{$value} = $command;
-            }
+            $self->process_numeric_argument_with_parameter($tag, $value,
+                $command, $line);
         }
     }
+say "TSs: ", Dumper($self->transposition_specs);
     @result;
+}
+
+# Set the configuration parameter specified by $tag using the specified
+# numeric value ($value) and parameter ($param).
+sub process_numeric_argument_with_parameter {
+    my ($self, $tag, $value, $param, $current_line) = @_;
+
+    my $externals = $self->external_commands;
+    if ($tag =~ /external[_-]cmd:?/) {
+        $externals->{$value} = $param;
+    } elsif ($tag =~ /transpose[_-]spec:?/) {
+        if ($param =~ /(\d+)\S+?(\d+)\s+([+-]?\d+)/) {
+            my ($bottom, $top, $half_steps) = ($1, $2, int($3));
+            $self->transposition_specs->{$value} =
+                TranspositionSpecification->new(
+                bottom_pitch => $bottom, top_pitch => $top,
+                steps => $half_steps);
+say "pnawp - bottom, top, hs: $bottom, $top, $half_steps";
+        } else {
+            carp "Invalid transpose specification: $current_line";
+        }
+    }
+}
+
+# Set the configuration parameter specified by $tag using the numeric $value.
+sub process_one_numeric_argument {
+    my ($self, $tag, $value, $current_line) = @_;
+
+    if ($tag =~ /\bprogram[_-]change[_-]high:?\b/) {
+        $self->_set_program_change_high($value);
+    } elsif ($tag =~ /\bprogram[_-]change[_-]low:?\b/) {
+        $self->_set_program_change_low($value);
+    } elsif ($tag =~ /\bbank[_-]select[_-]up:?\b/) {
+        $self->_set_bank_select_up($value);
+    } elsif ($tag =~ /\bbank[_-]select[_-]down:?\b/) {
+        $self->_set_bank_select_down($value);
+    } elsif ($tag =~ /\breal[_-]?time[_-]start:?\b/) {
+        $self->_set_realtime_start($value);
+    } elsif ($tag =~ /\breal[_-]?time[_-]stop:?\b/) {
+        $self->_set_realtime_stop($value);
+    } elsif ($tag =~ /\breal[_-]?time[_-]continue:?\b/) {
+        $self->_set_realtime_continue($value);
+    } elsif ($tag =~ /\boverride[_-]?cc[_-]?control[_-]?number:?\b/) {
+        $self->_set_override_cc_control_number($value);
+    } elsif ($tag =~ /\btop[_-]?note:?\b/) {
+        $self->_set_top_note_value($value);
+    } elsif ($tag =~ /\bbottom[_-]?note:?\b/) {
+        $self->_set_bottom_note_value($value);
+    } elsif ($tag =~ /\bprogram[_-]change[_-]sample:?\b/) {
+        $self->_set_program_change_sample($value);
+    } elsif ($tag =~ /\bprogram[_-]change[_-]sample[_-]seconds:?\b/) {
+        if ($value == 0) { $value = 1; }    # 0 is not allowed
+        $self->_set_program_change_sample_seconds($value);
+    } elsif ($tag =~ /\bcancel_program[_-]change[_-]sample:?\b/) {
+        $self->_set_cancel_program_change_sample($value);
+    } elsif ($tag =~ /\bstop_program[_-]change[_-]sample:?\b/) {
+        $self->_set_stop_program_change_sample($value);
+    } elsif ($tag =~ /\bcontinue_program[_-]change[_-]sample:?\b/) {
+        $self->_set_continue_program_change_sample($value);
+    } else {
+        carp "Invalid configuration line: $current_line";
+    }
 }
 
 1;

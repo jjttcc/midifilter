@@ -45,7 +45,9 @@ sub announce {
 #####  Implementation (non-public)
 
 END {
-    unlink $tmpfile;
+    if (defined $tmpfile) {
+        unlink $tmpfile;
+    }
 }
 
 1;

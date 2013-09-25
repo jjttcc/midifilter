@@ -78,12 +78,19 @@ sub filter_spec_report {
     my $result = '';
     my $fs_meta = $self->filter_spec->meta;
     my @attrs = $fs_meta->get_all_attributes;
-    for my $attr (@attrs) {
-        my $name = $attr->name;
+    my %name_for = map {
+        $_->get_value($self->filter_spec) => $_->name;
+    } @attrs;
+    for my $value (sort {
+        # Sort by numeric value, ascending (non-numbers/strings after numbers).
+        if ($a !~ /^\d+$/) { 1 } elsif ($b !~ /^\d+$/) { -1 } else {
+            $a <=> $b
+        }
+    } keys %name_for) {
+        my $name = $name_for{$value};
         if ($name eq 'announcer') {
             next;   # Skip 'announcer' attribute.
         }
-        my $value = $attr->get_value($self->filter_spec);
         if (ref $value eq 'HASH') {
             $result .= $name . ":\n";
             for my $k (keys %$value) {

@@ -16,7 +16,7 @@ real_time_start: 33
 real_time_stop: 34
 real_time_continue: 35
 # control-change number (decimal) switch to "override" mode:
-override_cc_control_number: 7   # channel volume
+override_cc_control_number: 64   # channel volume
 
 # MIDI note value for the bottom and top keys on the keyboard/device being
 # used
@@ -29,5 +29,25 @@ program_change_sample_seconds: 5
 #program_change_sample_seconds: 60   # PC sample: seconds for each patch
 stop_program_change_sample: 100     # stops program-change sample mode
 continue_program_change_sample: 101 # continues program-change sample mode
+
+##### transposition specification #####
+# syntax:
+# transpose_spec: <trigger-pitch> <bottom>..<top> [+-]<half-steps>
+# where:
+#   <trigger-pitch>:    pitch that triggers this transposition
+#   <bottom>..<top>:    range (inclusive) of MIDI pitches to be transposed
+#   [+-]<half-steps>:   number of half-steps: + = up, - = down
+# tips, examples:
+# transpose_spec: 109 21..72 -5 # from A0 to C5: transpose down 5 half-steps
+# transpose_spec: 109 0..127 +4 # for all pitches: transpose up a major 3rd
+# transpose_spec: 110 all +4    # same as above (alternate/convenience syntax)
+# transpose_spec: 110 21..36 -12    # from A0 to C2: transpose down 1 octave
+# Note: To turn transpose mode off, invoke the transpose sequence again
+# (e.g., <override_cc_control_number> 110 [1st time] -> transpose on;
+#        <override_cc_control_number> 110 [2nd time] -> transpose off)
+
+transpose_spec: 68 48..71 +7    # Gs4: transpose C3 to B4 up one fifth
+transpose_spec: 66 21..36 -12   # Fs4: transpose A0 to C2 down one octave
+##### (end of transposition specification) #####
 
 announcer: espeak

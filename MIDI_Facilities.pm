@@ -34,7 +34,7 @@ sub START()      { SND_SEQ_EVENT_START()      } # MIDI real time start message
 sub STOP()       { SND_SEQ_EVENT_STOP()       } # MIDI real time stop message
 sub CONTINUE()   { SND_SEQ_EVENT_CONTINUE()   } # MIDI Real time continue msg
 
-##  parameter/sub-message types, MIDI pitches, etc.
+##  parameter/sub-message types, MIDI controller values, etc.
 sub BANKMSB_SELECT()      { 0 }
 sub BANKLSB_SELECT()      { 32 }
 sub CHANNEL_VOLUME()      { 7 }

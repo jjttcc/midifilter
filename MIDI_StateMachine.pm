@@ -65,7 +65,8 @@ sub execute_state_change {
 if ($old_state == BANK_SELECT()) {say "old_state == BANK_SELECT detected!!!"}
         my ($param);
         (undef, undef, undef, undef, $param) = @{$alsa_event->[DATA()]};
-        if ($type == CONTROLLER() and $param == CHANNEL_VOLUME()) {
+        if ($type == CONTROLLER() and $param ==
+                $self->config->filter_spec->override_cc_control_number) {
             $new_state = OVERRIDE();
         }   # (else no state change, let event be sent on as is.)
     } else {    # PROGRAM_CHANGE(???!!!)
