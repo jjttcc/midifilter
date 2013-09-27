@@ -148,7 +148,6 @@ sub override_state_transition2 {
     $self->config->program_change_sample_stopped(FALSE);
     if ($is_pc_sample->{$pitch}) {
         $result = PROGRAM_CHANGE_SAMPLE();
-# !!!        $self->config->program_change_sample_continued(FALSE);
     } elsif ($is_cancel_pc_sample->{$pitch}) {
         $result = PROGRAM_CHANGE_SAMPLE();
         $self->config->program_change_sample_canceled(TRUE);
@@ -158,9 +157,13 @@ sub override_state_transition2 {
     } elsif ($is_continued_pc_sample->{$pitch}) {
         $result = PROGRAM_CHANGE_SAMPLE();
         $self->config->program_change_sample_stopped(FALSE);
-# !!!!perhaps not needed?:
-#$self->config->program_change_sample_continued(TRUE);
     } else {
+        if ($self->config->filter_spec->transpositions_pending and
+                $self->config->filter_spec->transposition_specs->{$pitch}) {
+            for my $sub (@{$self->_transposition_subscribers}) {
+                $sub->toggle_transposition($pitch);
+            }
+        }
         $result = NORMAL();  # override mode canceled
     }
     $result;

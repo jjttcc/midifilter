@@ -131,6 +131,9 @@ sub BUILD {
     } reverse MIDI::ALSA::listclients();
     $self->_set_client_number(\%client_number);
     my $config_lines = _config_lines(\@ARGV);
+    if (@$config_lines == 0) {
+        carp "Warning: empty filter configuration";
+    }
     my $fspec = $self->_set_filter_spec(FilterSpecification->new());
     $fspec->process($config_lines);
     my ($sources, $dests) = $self->_alsa_ports($config_lines);
@@ -150,7 +153,7 @@ sub debug {
 sub _config_lines {
     my ($files) = @_;
     use IO::File qw();
-    my $result;
+    my $result = [];
 
     for my $f (@$files) {
         if (-f $f) {

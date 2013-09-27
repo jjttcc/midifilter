@@ -117,7 +117,6 @@ has continue_program_change_sample => (
 has transposition_specs => (
     is => 'ro',
     isa => 'HashRef[TranspositionSpecification]',
-    writer => '_set_transposition_spec',
     default => sub { {} },
     init_arg => undef,
 );
@@ -177,13 +176,23 @@ sub non_pitch_spec {
     }
 }
 
+# Are there any transpositions to execute?
+sub transpositions_pending {
+    my ($self) = @_;
+    my $result = FALSE;
+    if (%{$self->transposition_specs}) {
+        $result = TRUE;
+    }
+    $result;
+}
+
 ###  Basic operations
 
 # Parse and process the specified $lines (ArrayRef) and make the result
 # available via the public interface
 sub process {
     my ($self, $lines) = @_;
-    if (not defined $lines) { croak "process: argument not valid"; }
+    if (not defined $lines) { croak "process: argument 'lines' not valid"; }
     my @result = ([], []);
 
     for my $line (@$lines) {

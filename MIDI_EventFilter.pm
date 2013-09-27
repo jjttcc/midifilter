@@ -52,6 +52,13 @@ say STDERR "state_transition: ", human_readable_st($state_transition);
 
 #####  Implementation
 
+has _transposition_subscribers => (
+    is => 'ro',
+    isa => 'ArrayRef',
+    writer => '_set_transposition_subscribers',
+    default => sub { [] },
+);
+
 # Convenience function: "$s1->$s2"
 sub _state_tr {
     my ($s1, $s2) = @_;
@@ -61,33 +68,36 @@ sub _state_tr {
 sub BUILD {
     my ($self) = @_;
 
+    #!!!!!static_event - probably needs its name to be changed!!!!!!!!!!!!!!
+    my $static_event = Static_MIDI_Event->new(config => $self->config);
+    my $bank_event = BankSelect_MIDI_Event->new(config => $self->config);
+    my $program_change_sample = ProgramChangeSample_MIDI_Event->new(
+        config => $self->config);
+    my $program_change_event = ProgramChange_MIDI_Event->new(
+        config => $self->config);
+    my $external_cmd_event = ExternalCommand_MIDI_Event->new(
+        config => $self->config);
+    my $realtime_event = RealTime_MIDI_Event->new(config => $self->config);
     if (not defined $self->config) { croak "code defect: config not set" }
     my $midimap = $self->_midi_event_map;
     # Initialize _midi_event_map -
     # key: state transition description [<state1>-><state2>]
-    $midimap->{_state_tr(NORMAL(), NORMAL())} = Static_MIDI_Event->new(
-        config => $self->config);
+    $midimap->{_state_tr(NORMAL(), NORMAL())} = $static_event;
     $midimap->{_state_tr(NORMAL(), OVERRIDE())} = undef;            # (no-op)
 # !!!!Note: this state transition may never be seen:
-    $midimap->{_state_tr(BANK_SELECT(), NORMAL())} = Static_MIDI_Event->new(
-#        config => undef);   #!!!temporary test to cause core dump if it's used!!
-        config => $self->config);
+    $midimap->{_state_tr(BANK_SELECT(), NORMAL())} = $static_event;
     $midimap->{_state_tr(BANK_SELECT(), OVERRIDE())} = undef;       # (no-op)
     $midimap->{_state_tr(OVERRIDE(), OVERRIDE())} = undef;          # (no-op)
     $midimap->{_state_tr(OVERRIDE(), PROGRAM_CHANGE())} = undef;    # (no-op)
     $midimap->{_state_tr(OVERRIDE(), NORMAL())} = undef;            # (no-op)
-    $midimap->{_state_tr(OVERRIDE(), BANK_SELECT())} =
-        BankSelect_MIDI_Event->new(config => $self->config);
+    $midimap->{_state_tr(OVERRIDE(), BANK_SELECT())} = $bank_event;
     $midimap->{_state_tr(OVERRIDE(), PROGRAM_CHANGE_SAMPLE())} =
-        ProgramChangeSample_MIDI_Event->new(config => $self->config);
-    $midimap->{_state_tr(PROGRAM_CHANGE(), NORMAL())} =
-        ProgramChange_MIDI_Event->new(config => $self->config);
+        $program_change_sample;
+    $midimap->{_state_tr(PROGRAM_CHANGE(), NORMAL())} = $program_change_event;
     $midimap->{_state_tr(PROGRAM_CHANGE, OVERRIDE())} = undef;      # (no-op)
     $midimap->{_state_tr(PROGRAM_CHANGE, PROGRAM_CHANGE())} = undef;# (no-op)
-    $midimap->{_state_tr(OVERRIDE(), EXTERNAL_CMD())} =
-        ExternalCommand_MIDI_Event->new(config => $self->config);
-    $midimap->{_state_tr(OVERRIDE(), REALTIME())} =
-        RealTime_MIDI_Event->new(config => $self->config);
+    $midimap->{_state_tr(OVERRIDE(), EXTERNAL_CMD())} = $external_cmd_event;
+    $midimap->{_state_tr(OVERRIDE(), REALTIME())} = $realtime_event;
 }
 
 
