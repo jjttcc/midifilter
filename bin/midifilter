@@ -9,12 +9,9 @@ use Data::Dumper;
 use Carp;
 
 BEGIN {
-#!!!!!!!!!!!!!!	my $progname = basename($0);
 	my $progpath = dirname($0);
-say "inc before: ", Dumper(@INC);
 	push @INC, "$progpath/../lib";
 	push @INC, "$progpath/../lib/midifilter";
-say "inc after ", Dumper(@INC);
 }
 
 use MIDI_EventStream;
@@ -24,6 +21,4 @@ my $app = AppConfiguration->new();
 $app->debug();
 my $stream = $app->midi_stream();
 
-say "starting ", $app->application_name();
-say "app verbose: ", ($app->verbose()? 'yes': 'no');
 $stream->process();

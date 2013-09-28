@@ -10,9 +10,8 @@ use constant::boolean;
 ### public
 
 # Print debugging/tracing information?
-sub verbose {
-    defined $ENV{VERBOSE};
-}
+sub debug() { state $result = $ENV{MIDIDEBUG}; $result; }
+
 
 # The name of the running process
 sub application_name {

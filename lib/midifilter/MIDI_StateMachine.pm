@@ -15,8 +15,6 @@ use MIDI_Facilities;
 
 ###  Constants
 
-sub DEBUG() { state $result = $ENV{MIDIDEBUG}; $result; }
-
 # valid state transitions - hash reference
 my $valid_state_transitions = {
     NORMAL()                => [OVERRIDE, NORMAL],
@@ -78,7 +76,9 @@ if ($old_state == BANK_SELECT()) {say "old_state == BANK_SELECT detected!!!"}
         $new_state = $self->progchange_state_transition($alsa_event,
             $old_state, \$add_to_progch);
     }
-    if (DEBUG()) { _check_state_change($old_state, $self->state); }
+    if ($self->config->debug()) {
+        _check_state_change($old_state, $self->state);
+    }
     if ($new_state != $old_state) {
         $self->_set_state($new_state);
     }

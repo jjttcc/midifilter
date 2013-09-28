@@ -145,10 +145,6 @@ sub BUILD {
             config => $self));
 }
 
-sub debug {
-    my ($self) = @_;
-}
-
 # Uncommented lines, lower-cased, from the configuration file(s) (ArrayRef)
 sub _config_lines {
     my ($files) = @_;

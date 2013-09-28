@@ -50,7 +50,9 @@ sub dispatch_next_event {
     my @alsa_event = input();
     ++$event_count;
     my $state_transition = $self->execute_state_change(\@alsa_event);
-say STDERR "state_transition: ", human_readable_st($state_transition);
+    if ($self->config->debug()) {
+        say STDERR "state_transition: ", human_readable_st($state_transition);
+    }
     my $event = $self->_midi_event_map->{$state_transition};
     if (defined $event) {
         $event->event_data(\@alsa_event);
