@@ -3,9 +3,19 @@
 # Copyright 2013  Jim Cochrane - GNU GPL, verson 2
 
 use Modern::Perl;
+use File::Basename;
 use constant::boolean;
 use Data::Dumper;
 use Carp;
+
+BEGIN {
+#!!!!!!!!!!!!!!	my $progname = basename($0);
+	my $progpath = dirname($0);
+say "inc before: ", Dumper(@INC);
+	push @INC, "$progpath/../lib";
+	push @INC, "$progpath/../lib/midifilter";
+say "inc after ", Dumper(@INC);
+}
 
 use MIDI_EventStream;
 use AppConfiguration;
