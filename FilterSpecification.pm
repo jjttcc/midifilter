@@ -213,7 +213,6 @@ sub process {
                 $command, $line);
         }
     }
-say "TSs: ", Dumper($self->transposition_specs);
     @result;
 }
 
@@ -232,7 +231,6 @@ sub process_numeric_argument_with_parameter {
                 TranspositionSpecification->new(
                 bottom_pitch => $bottom, top_pitch => $top,
                 steps => $half_steps);
-say "pnawp - bottom, top, hs: $bottom, $top, $half_steps";
         } else {
             carp "Invalid transpose specification: $current_line";
         }

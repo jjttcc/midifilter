@@ -1,7 +1,6 @@
-package Static_MIDI_Event;
-# MIDI events to be output as is, without modification [!!!!to-do: redo this
-# description - account for transpositions, ...!!!]
-# !!!!to-do: [perhaps] rename the class to indicate filtering can occur
+package Regular_MIDI_Event;
+# "Normal" (i.e., not treated specially) MIDI events to be output to the
+# configured MIDI clients (after possible configured modifications)
 
 use Mouse;
 use Modern::Perl;
@@ -15,9 +14,8 @@ extends 'MIDI_Event';
 
 #####  Public interface
 
-###  Access
-
-# !!!!!!to-do: Make this non-public!!!
+# Publisher of status changes with respect to MIDI events (i.e., that this
+# object will subscribe to)
 has status_change_publisher => (
     is => 'ro',
     isa => 'Object',
@@ -32,9 +30,7 @@ state $transposition_enabled = {};
 sub toggle_transposition {
     my ($self, $pitch_value) = @_;
     my $new_state = FALSE;
-say "toggle_transposition called with pitch $pitch_value";
-my $spec = $self->config->filter_spec->transposition_specs->{$pitch_value};
-say "spec: ", Dumper($spec);
+    my $spec = $self->config->filter_spec->transposition_specs->{$pitch_value};
     my $first_pitch = $spec->bottom_pitch;
     if (not $transposition_enabled->{$first_pitch}) {
         $new_state = TRUE;
@@ -44,7 +40,6 @@ say "spec: ", Dumper($spec);
     for my $p ($first_pitch .. $last_pitch) {
         $transposition_enabled->{$p} = $new_state;
     }
-say "tt - ten: ", Dumper($transposition_enabled);
 }
 
 ###  Basic operations
@@ -74,14 +69,12 @@ sub dispatch {
                 $self->config->filter_spec->transposition_specs;
             for my $t (values %{$transpositions}) {
                 if ($pitch >= $t->bottom_pitch and $pitch <= $t->top_pitch) {
-say STDERR "old PITCH: ", $pitch;
                     $pitch += $t->steps;
                     if ($pitch < 0) {
                         $pitch = 0;     # Negative pitches don't compute.
                     } elsif ($pitch > 127) {
                         $pitch = 127;   # Must be within range of MIDI spec.
                     }
-say STDERR "new pitch: ", $pitch;
                     $data->[PITCH()] = $pitch;
                     last;
                 }

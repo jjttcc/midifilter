@@ -7,7 +7,7 @@ use Modern::Perl;
 use constant::boolean;
 use Data::Dumper;
 use MIDI_Event;
-use Static_MIDI_Event;
+use Regular_MIDI_Event;
 use ProgramChange_MIDI_Event;
 use BankSelect_MIDI_Event;
 use ExternalCommand_MIDI_Event;
@@ -35,7 +35,6 @@ has config => (
 # Subscribe the specified object to publishing of status-change notifications.
 sub subscribe {
     my ($self, $o) = @_;
-say "subscribing ", $o;
     push @{$self->_transposition_subscribers}, $o;
 }
 
@@ -67,7 +66,6 @@ say STDERR "state_transition: ", human_readable_st($state_transition);
 has _transposition_subscribers => (
     is => 'ro',
     isa => 'ArrayRef',
-# delete!!!!:    writer => '_set_transposition_subscribers',
     default => sub { [] },
 );
 
@@ -80,8 +78,7 @@ sub _state_tr {
 sub BUILD {
     my ($self) = @_;
 
-    #!!!!!static_event - probably needs its name to be changed!!!!!!!!!!!!!!
-    my $static_event = Static_MIDI_Event->new(config => $self->config,
+    my $static_event = Regular_MIDI_Event->new(config => $self->config,
         status_change_publisher => $self);
     my $bank_event = BankSelect_MIDI_Event->new(config => $self->config);
     my $program_change_sample = ProgramChangeSample_MIDI_Event->new(
