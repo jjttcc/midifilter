@@ -15,25 +15,36 @@ extends 'MIDI_Event';
 
 #####  Public interface
 
+###  Access
+
+# !!!!!!to-do: Make this non-public!!!
+has status_change_publisher => (
+    is => 'ro',
+    isa => 'Object',
+);
+
+###  Basic operations
+
 {
-state $transpositions = {};
+state $transposition_enabled = {};
 
 # Toggle (on/off) the specified transposition specification.
 sub toggle_transposition {
     my ($self, $pitch_value) = @_;
-    my $configured_trs = $self->config->filter_spec->transposition_specs;
-    my $trans = $transpositions->{$pitch_value};
-    if (not defined $trans) {
-        my $tr_spec = $configured_trs->{$pitch_value};
-        if (not defined $tr_spec) {
-            croak "Fatal error: code defect [line ", __LINE__,
-                ", file ", __FILE__, "]";
-        }
-        $trans->{$pitch_value} = [$tr_spec, TRUE];
-    } else {
-        my $trans_spec = $trans->{$pitch_value};
-        $trans_spec->[1] = not $trans_spec->[1];    # [toggle]
+    my $new_state = FALSE;
+say "toggle_transposition called with pitch $pitch_value";
+my $spec = $self->config->filter_spec->transposition_specs->{$pitch_value};
+say "spec: ", Dumper($spec);
+    my $first_pitch = $spec->bottom_pitch;
+    if (not $transposition_enabled->{$first_pitch}) {
+        $new_state = TRUE;
     }
+    my $last_pitch = $spec->top_pitch;
+    my $half_steps = $spec->steps;
+    for my $p ($first_pitch .. $last_pitch) {
+        $transposition_enabled->{$p} = $new_state;
+    }
+say "tt - ten: ", Dumper($transposition_enabled);
 }
 
 ###  Basic operations
@@ -49,31 +60,31 @@ sub dispatch {
     # optimizations
     state $note_on = NOTEON();
     state $note_off = NOTEOFF();
-    state $transpositions_pending =
-        $self->config->filter_spec->transpositions_pending;
+    state $transpositions_configured =
+        $self->config->filter_spec->transpositions_configured;
     # (Assume: queue, time, source, destination [undefs] are not needed:)
     my ($type, $flags, $tag, undef, undef, undef, undef, $data) =
         @{$self->event_data};
-#say STDERR "tsp: ", $transpositions_pending;
-#say STDERR "type: ", $type;
-#say STDERR "note on: ", $note_on;
-#say STDERR "note off: ", $note_off;
-    if ($transpositions_pending and ($type == $note_on or
+    # If there are configured transpositions and its a note event...
+    if ($transpositions_configured and ($type == $note_on or
             $type == $note_off)) {
-        state $transpositions = $self->config->filter_spec->transposition_specs;
         my $pitch = $data->[PITCH()];
-        for my $t (values %{$transpositions}) {
-            if ($pitch >= $t->bottom_pitch and $pitch <= $t->top_pitch) {
-#say STDERR "old PITCH: ", $pitch;
-                $pitch += $t->steps;
-                if ($pitch < 0) {
-                    $pitch = 0;     # Negative pitches don't compute.
-                } elsif ($pitch > 127) {
-                    $pitch = 127;   # Must be within range of MIDI spec.
+        if ($transposition_enabled->{$pitch}) {
+            state $transpositions =
+                $self->config->filter_spec->transposition_specs;
+            for my $t (values %{$transpositions}) {
+                if ($pitch >= $t->bottom_pitch and $pitch <= $t->top_pitch) {
+say STDERR "old PITCH: ", $pitch;
+                    $pitch += $t->steps;
+                    if ($pitch < 0) {
+                        $pitch = 0;     # Negative pitches don't compute.
+                    } elsif ($pitch > 127) {
+                        $pitch = 127;   # Must be within range of MIDI spec.
+                    }
+say STDERR "new pitch: ", $pitch;
+                    $data->[PITCH()] = $pitch;
+                    last;
                 }
-#say STDERR "new pitch: ", $pitch;
-                $data->[PITCH()] = $pitch;
-                last;
             }
         }
     }
@@ -83,6 +94,14 @@ sub dispatch {
     }
 }
 
+}
+
+
+#####  Implementation (non-public)
+
+sub BUILD {
+    my ($self) = @_;
+    $self->status_change_publisher->subscribe($self);
 }
 
 1;

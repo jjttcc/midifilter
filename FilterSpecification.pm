@@ -176,8 +176,8 @@ sub non_pitch_spec {
     }
 }
 
-# Are there any transpositions to execute?
-sub transpositions_pending {
+# Have any transpositions been configured?
+sub transpositions_configured {
     my ($self) = @_;
     my $result = FALSE;
     if (%{$self->transposition_specs}) {

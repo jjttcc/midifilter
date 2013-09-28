@@ -15,7 +15,7 @@ use MIDI_Facilities;
 
 ###  Constants
 
-sub DEBUG() { 1 }
+sub DEBUG() { state $result = $ENV{MIDIDEBUG}; $result; }
 
 # valid state transitions - hash reference
 my $valid_state_transitions = {
@@ -47,6 +47,11 @@ sub config {
 }
 
 #####  Implementation (non-public)
+
+# Subscribers to transposition-related state changes (a "virtual" feature - must
+# be implemented by descendant class)
+sub _transposition_subscribers {
+}
 
 # Based on the current state and $alsa_event (the last ALSA-MIDI event
 # received), change the state and take any other appropriate actions.
@@ -158,7 +163,7 @@ sub override_state_transition2 {
         $result = PROGRAM_CHANGE_SAMPLE();
         $self->config->program_change_sample_stopped(FALSE);
     } else {
-        if ($self->config->filter_spec->transpositions_pending and
+        if ($self->config->filter_spec->transpositions_configured and
                 $self->config->filter_spec->transposition_specs->{$pitch}) {
             for my $sub (@{$self->_transposition_subscribers}) {
                 $sub->toggle_transposition($pitch);

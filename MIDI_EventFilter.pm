@@ -29,7 +29,19 @@ has config => (
     isa     => 'MIDI_Configuration',
 );
 
+
+###  Element change
+
+# Subscribe the specified object to publishing of status-change notifications.
+sub subscribe {
+    my ($self, $o) = @_;
+say "subscribing ", $o;
+    push @{$self->_transposition_subscribers}, $o;
+}
+
 my $event_count = 0;
+
+###  Basic operations
 
 # Input the next, pending, event and according its type and the current state,
 # dispatch (i.e., output, change state, or etc.) the event appropriately.
@@ -55,7 +67,7 @@ say STDERR "state_transition: ", human_readable_st($state_transition);
 has _transposition_subscribers => (
     is => 'ro',
     isa => 'ArrayRef',
-    writer => '_set_transposition_subscribers',
+# delete!!!!:    writer => '_set_transposition_subscribers',
     default => sub { [] },
 );
 
@@ -69,7 +81,8 @@ sub BUILD {
     my ($self) = @_;
 
     #!!!!!static_event - probably needs its name to be changed!!!!!!!!!!!!!!
-    my $static_event = Static_MIDI_Event->new(config => $self->config);
+    my $static_event = Static_MIDI_Event->new(config => $self->config,
+        status_change_publisher => $self);
     my $bank_event = BankSelect_MIDI_Event->new(config => $self->config);
     my $program_change_sample = ProgramChangeSample_MIDI_Event->new(
         config => $self->config);
