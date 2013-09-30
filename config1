@@ -50,6 +50,7 @@ continue_program_change_sample: 101 # continues program-change sample mode
 transpose_spec: 68 48..71 +7    # Gs4: transpose C3 to B4 up one fifth
 transpose_spec: 66 21..36 -12   # Fs4: transpose A0 to C2 down one octave
 transpose_spec: 70 97..108 +12  # As4: transpose Cs7 to C8 up one octave
+#transpose_spec: 64 48..71 -3    #  E4: transpose C3 to B4 down minor third
 ##### (end of transposition specification) #####
 
 announcer: espeak

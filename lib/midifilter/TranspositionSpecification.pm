@@ -1,7 +1,7 @@
 package TranspositionSpecification;
 # Specifications for a MIDI pitch transposition
 
-use Moose;
+use Mouse;
 use Modern::Perl;
 
 
