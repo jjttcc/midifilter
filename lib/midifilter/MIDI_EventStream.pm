@@ -35,7 +35,7 @@ sub process {
 sub _run_event_loop {
     my ($self) = @_;
 
-    my $filter = MIDI_EventFilter->new(config => $self->config);
+    my $filter = $self->config->filter;
     while (1) {
         $filter->dispatch_next_event();
     }

@@ -56,6 +56,7 @@ has filter_spec => (
     init_arg => undef,  # not to be supplied in 'new'
 );
 
+# Has program-change sample mode been canceled?
 has program_change_sample_canceled => (
     is       => 'rw',
     isa      => 'Bool',
@@ -69,6 +70,14 @@ has program_change_sample_stopped => (
     isa      => 'Bool',
     default  => FALSE,
     init_arg => undef,  # not to be supplied in 'new'
+);
+
+# The MIDI event filter
+has filter => (
+    is      => 'ro',
+    isa     => 'MIDI_EventFilter',
+    writer  => '_set_filter',
+    init_arg => undef,  # i.e., cannot be supplied in 'new' method
 );
 
 
@@ -135,6 +144,7 @@ sub BUILD {
         carp "Warning: empty filter configuration";
     }
     my $fspec = $self->_set_filter_spec(FilterSpecification->new());
+    $self->_set_filter(MIDI_EventFilter->new(config => $self));
     $fspec->process($config_lines);
     my ($sources, $dests) = $self->_alsa_ports($config_lines);
     $self->_set_source_ports($sources);

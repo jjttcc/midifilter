@@ -13,13 +13,14 @@ use feature qw(state);
 use MIDI_Facilities;
 
 
+#####  Public interface
+
 ###  Constants
 
 # valid state transitions - hash reference
 my $valid_state_transitions = {
     NORMAL()                => [OVERRIDE, NORMAL],
-#   BANK_SELECT()           => [OVERRIDE, NORMAL],
-    BANK_SELECT()           => [NORMAL], #!!!theory: BS -> OVERRIDE impossible
+    BANK_SELECT()           => [NORMAL],
     PROGRAM_CHANGE_SAMPLE() => [NORMAL],
     REALTIME()              => [OVERRIDE, NORMAL],
     OVERRIDE()              => [OVERRIDE, PROGRAM_CHANGE, NORMAL, BANK_SELECT,
@@ -36,19 +37,48 @@ has state => (
     is       => 'ro',
     isa      => 'Int',
     default  => sub { NORMAL(); },
-    writer   => '_set_state',
+    writer   => 'set_state',
     init_arg => undef,   # Not allowed in 'new' method.
 );
 
-# configuration settings - abstract feature
+# configuration settings - virtual feature
 sub config {
+}
+
+###  Basic operations
+
+my $event_count = 0;
+
+# Input the next, pending, event and according its type and the current state,
+# dispatch (i.e., output, change state, or etc.) the event appropriately.
+sub dispatch_next_event {
+    my ($self) = @_;
+
+    my @alsa_event = input();
+    ++$event_count;
+    my $state_transition = $self->execute_state_change(\@alsa_event);
+    if ($self->config->debug()) {
+        say STDERR "state_transition: ", human_readable_st($state_transition);
+    }
+    my $event = $self->_midi_event_map->{$state_transition};
+    if (defined $event) {
+        $event->event_data(\@alsa_event);
+        $event->dispatch($self);
+    } else {
+        # No event for this state transition (i.e., no-op)
+    }
 }
 
 #####  Implementation (non-public)
 
-# Subscribers to transposition-related state changes (a "virtual" feature - must
-# be implemented by descendant class)
+# Subscribers to transposition-related state changes (virtual feature that
+# must be implemented by descendant class)
 sub _transposition_subscribers {
+}
+
+# map of MIDI_Event subtype instances: processing-state -> appropriate subtype
+# (virtual feature)
+sub _midi_event_map {
 }
 
 # Based on the current state and $alsa_event (the last ALSA-MIDI event
@@ -65,14 +95,13 @@ sub execute_state_change {
         $new_state = $self->override_state_transition($alsa_event, $old_state,
             \$add_to_progch);
     } elsif ($old_state == NORMAL() or $old_state == BANK_SELECT()) {
-if ($old_state == BANK_SELECT()) {say "old_state == BANK_SELECT detected!!!"}
         my ($param);
         (undef, undef, undef, undef, $param) = @{$alsa_event->[DATA()]};
         if ($type == CONTROLLER() and $param ==
                 $self->config->filter_spec->override_cc_control_number) {
             $new_state = OVERRIDE();
         }   # (else no state change, let event be sent on as is.)
-    } else {    # PROGRAM_CHANGE(???!!!)
+    } else {
         $new_state = $self->progchange_state_transition($alsa_event,
             $old_state, \$add_to_progch);
     }
@@ -80,12 +109,12 @@ if ($old_state == BANK_SELECT()) {say "old_state == BANK_SELECT detected!!!"}
         _check_state_change($old_state, $self->state);
     }
     if ($new_state != $old_state) {
-        $self->_set_state($new_state);
+        $self->set_state($new_state);
     }
     "$old_state->$new_state";
 }
 
-# The new state (transitioned from an original state of OVERRIDE), according
+# The new state, transitioned from an original state of OVERRIDE, according
 # to the contents of $alsa_event and $old_state.
 # Note: $add_to_progch is expected to be a scalar reference and the
 # referenced value might be modified.
@@ -165,6 +194,7 @@ sub override_state_transition2 {
     } else {
         if ($self->config->filter_spec->transpositions_configured and
                 $self->config->filter_spec->transposition_specs->{$pitch}) {
+            # A transposition toggle has been invoked - notify subscribers:
             for my $sub (@{$self->_transposition_subscribers}) {
                 $sub->toggle_transposition($pitch);
             }
@@ -187,10 +217,6 @@ sub progchange_state_transition {
         $self->config->filter_spec->override_cc_control_number;
     state $lowest_pitch = $self->config->filter_spec->bottom_note_value;
     state $highest_pitch = $self->config->filter_spec->top_note_value;
-if ($old_state != PROGRAM_CHANGE()) {
-say STDERR "!!!progchange_state_transition - old state: ",
-_name_for_state($old_state);
-}
     if ($type == NOTEON() or $type == NOTEOFF()) {
         (undef, $pitch, $velocity, undef, undef) = @{$alsa_event->[DATA()]};
         if ($type == NOTEOFF() or $velocity == 0) {   # i.e., NOTE-OFF
@@ -247,6 +273,14 @@ sub _check_state_change {
             _name_for_state($state1), ' -> ', _name_for_state($state2);
     }
     $valid;
+}
+
+# Human-readable state transition - for debugging
+sub human_readable_st {
+    my ($s) = @_;
+    my ($s1, $s2) = split(/->/, $s);
+    my @parts = split(/->/, $s);
+    _name_for_state($s1) . ' -> ' . _name_for_state($s2);
 }
 
 sub _code_defect {
