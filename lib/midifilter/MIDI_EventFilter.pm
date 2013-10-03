@@ -74,8 +74,6 @@ sub BUILD {
     # key: state transition description [<state1>-><state2>]
     $midimap->{_state_tr(NORMAL(), NORMAL())} = $regular_event;
     $midimap->{_state_tr(NORMAL(), OVERRIDE())} = undef;            # (no-op)
-# !!!!Note: this state transition may never be seen:
-    $midimap->{_state_tr(BANK_SELECT(), NORMAL())} = $regular_event;
     $midimap->{_state_tr(OVERRIDE(), OVERRIDE())} = undef;          # (no-op)
     $midimap->{_state_tr(OVERRIDE(), PROGRAM_CHANGE())} = undef;    # (no-op)
     $midimap->{_state_tr(OVERRIDE(), NORMAL())} = undef;            # (no-op)

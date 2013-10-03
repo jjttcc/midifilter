@@ -20,12 +20,6 @@ use MIDI_Facilities;
 # valid state transitions - hash reference
 my $valid_state_transitions = {
     NORMAL()                => [OVERRIDE, NORMAL],
-# !!!!Since the bank-select event 'dispatch' routine calls set_state(NORMAL),
-# !!!!the 'execute_state_change' routine will never return BANK_SELECT->NORMAL
-# !!!!because the old state will have already changed to NORMAL before
-# 'execute_state_change' is called (because of the set_state(NORMAL)), so this
-# transition should never happen and should be removed:
-#    BANK_SELECT()           => [NORMAL],
     PROGRAM_CHANGE_SAMPLE() => [NORMAL],
     REALTIME()              => [OVERRIDE, NORMAL],
     OVERRIDE()              => [OVERRIDE, PROGRAM_CHANGE, NORMAL, BANK_SELECT,
@@ -217,10 +211,7 @@ sub override_state_transition3 {
     } elsif (%{$fspec->mmc_command} and $fspec->mmc_command->{$pitch}) {
         $result = MMC();
     } else {
-say "ost3, fspec->mmc_command: ", Dumper($fspec->mmc_command);
-say "pitch: ", $pitch;
-# !!!%{$fspec->mmc_command} and $fspec->mmc_command->{$pitch}
-        $result = NORMAL();
+        $result = NORMAL();     # default
     }
     $result;
 }

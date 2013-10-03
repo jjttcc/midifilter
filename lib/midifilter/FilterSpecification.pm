@@ -248,7 +248,6 @@ sub process_numeric_argument_with_parameter {
         }
     } elsif ($tag =~ /mmc[_-]([[:alpha:]_]+):?/) {
         my $mmctype = $1;
-say "mmctype: $mmctype";
         $self->_add_mmc_command($mmctype, $value, $param);
     }
 }
@@ -301,15 +300,6 @@ sub _add_mmc_command {
     }
     my $type_and_devid = [$mmctype, int($device_id)];
     $mmc_tbl->{$pitch} = $type_and_devid;
-}
-
-sub _old___add_mmc_command {
-    my ($self, $mmctype, $pitch, $device_id) = @_;
-    my $mmc_tbl = $self->mmc_command;
-    if (not defined $mmc_tbl) {
-        confess "Code defect (__LINE__, __FILE__): mmc_command not defined";
-    }
-    $mmc_tbl->{$mmctype} = [$pitch, $device_id];
 }
 
 1;
