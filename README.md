@@ -26,16 +26,17 @@ application.
 
 ### Current Features
 
-The following events can be triggered and sent to the configured MIDI clients
-(when appropriate):
+The following events can be triggered and (when appropriate) sent to the
+configured MIDI clients:
 
 * program-change - From note event where patch number is determined by the
   pitch value.
 * bank-select - switch to the next/previous bank.
 * transpositions - Transpose pitches within a certain configured range up or
   down by a specified number of half steps.
-* Trigger external commands.
-* Send real-time START, STOP, and CONTINUE messages.
+* External commands.
+* Real-time START, STOP, and CONTINUE messages.
+* MIDI machine control messages.
 * Trigger a mode (which I call "program-change sample mode") in which
   midifilter cycles through the entire range of patches, with a pause in
   between each patch.  In other words, it sends patch 0, pauses for a
@@ -169,6 +170,12 @@ description of what each tag does.
   keyboard or device being used for input.
 * top\_note - Specifies the MIDI value of the highest pitch on the MIDI
   keyboard or device being used for input.
+* mmc\_play - MMC (deferred) play
+* mmc\_stop - MMC stop
+* mmc\_rewind - MMC rewind
+* mmc\_record\_strobe - MMC record strobe (AKA punch in)
+* mmc\_record\_exit - MMC record exit (AKA punch out)
+* mmc\_record\_pause - MMC record pause
 * program\_change\_sample - Specifies the MIDI pitch value that (when in
   "override" mode) triggers the "program-change sample" mode.
 * cancel\_program\_change\_sample - Specifies the MIDI pitch value that (when
