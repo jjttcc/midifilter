@@ -33,6 +33,17 @@ program_change_sample_seconds: 5
 stop_program_change_sample: 100     # stops program-change sample mode
 continue_program_change_sample: 101 # continues program-change sample mode
 
+# begin: MIDI machine control settings
+# format:
+# mmc_<command>: <trigger-pitch> <target-device-id>
+mmc_play: 52 127    # MMC (deferred) play - triggered by E3, id 127
+mmc_stop: 54 127    # MMC stop - triggered by Fs3, id 127
+mmc_rewind: 56 127  # MMC rewind - triggered by Gs3, id 127
+mmc_record_strobe: 58 127   # MMC record strobe (AKA punch in)
+mmc_record_exit: 60 127     # MMC record exit (AKA punch out)
+mmc_record_pause: 62 127    # MMC record pause
+# end: MIDI machine control settings
+
 ##### transposition specification #####
 # syntax:
 # transpose_spec: <trigger-pitch> <bottom>..<top> [+-]<half-steps>

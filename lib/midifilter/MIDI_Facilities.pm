@@ -14,6 +14,7 @@ use MIDI::ALSA qw(
     SND_SEQ_EVENT_START
     SND_SEQ_EVENT_STOP
     SND_SEQ_EVENT_CONTINUE
+    SND_SEQ_EVENT_SYSEX
     input
     output
     connectto
@@ -33,6 +34,7 @@ sub PGMCHANGE()  { SND_SEQ_EVENT_PGMCHANGE()  }
 sub START()      { SND_SEQ_EVENT_START()      } # MIDI real time start message
 sub STOP()       { SND_SEQ_EVENT_STOP()       } # MIDI real time stop message
 sub CONTINUE()   { SND_SEQ_EVENT_CONTINUE()   } # MIDI Real time continue msg
+sub SYSEX()      { SND_SEQ_EVENT_SYSEX()      } # system exclusive message
 
 ##  parameter/sub-message types, MIDI controller values, etc.
 sub BANKMSB_SELECT()      { 0 }
@@ -66,6 +68,7 @@ sub BANK_SELECT()           { 3 } # Bank select to be sent
 sub EXTERNAL_CMD()          { 4 } # External command to be executed
 sub REALTIME()              { 5 } # MIDI real-time message to be sent
 sub PROGRAM_CHANGE_SAMPLE() { 6 } # Program change to be sent
+sub MMC()                   { 7 } # MIDI machine control
 
 ##  Keys for "special" "external" commands
 sub TERMINATE_CMD()  { '<terminate>' }      # Request for program termination

@@ -20,11 +20,16 @@ use MIDI_Facilities;
 # valid state transitions - hash reference
 my $valid_state_transitions = {
     NORMAL()                => [OVERRIDE, NORMAL],
-    BANK_SELECT()           => [NORMAL],
+# !!!!Since the bank-select event 'dispatch' routine calls set_state(NORMAL),
+# !!!!the 'execute_state_change' routine will never return BANK_SELECT->NORMAL
+# !!!!because the old state will have already changed to NORMAL before
+# 'execute_state_change' is called (because of the set_state(NORMAL)), so this
+# transition should never happen and should be removed:
+#    BANK_SELECT()           => [NORMAL],
     PROGRAM_CHANGE_SAMPLE() => [NORMAL],
     REALTIME()              => [OVERRIDE, NORMAL],
     OVERRIDE()              => [OVERRIDE, PROGRAM_CHANGE, NORMAL, BANK_SELECT,
-                               PROGRAM_CHANGE_SAMPLE, EXTERNAL_CMD],
+                               PROGRAM_CHANGE_SAMPLE, EXTERNAL_CMD, MMC],
     PROGRAM_CHANGE()        => [PROGRAM_CHANGE, NORMAL, OVERRIDE],
     EXTERNAL_CMD()          => [OVERRIDE, NORMAL],
 };
@@ -94,7 +99,7 @@ sub execute_state_change {
     if ($old_state == OVERRIDE()) {
         $new_state = $self->override_state_transition($alsa_event, $old_state,
             \$add_to_progch);
-    } elsif ($old_state == NORMAL() or $old_state == BANK_SELECT()) {
+    } elsif ($old_state == NORMAL()) {
         my ($param);
         (undef, undef, undef, undef, $param) = @{$alsa_event->[DATA()]};
         if ($type == CONTROLLER() and $param ==
@@ -192,14 +197,30 @@ sub override_state_transition2 {
         $result = PROGRAM_CHANGE_SAMPLE();
         $self->config->program_change_sample_stopped(FALSE);
     } else {
-        if ($self->config->filter_spec->transpositions_configured and
-                $self->config->filter_spec->transposition_specs->{$pitch}) {
-            # A transposition toggle has been invoked - notify subscribers:
-            for my $sub (@{$self->_transposition_subscribers}) {
-                $sub->toggle_transposition($pitch);
-            }
+        $result = $self->override_state_transition3($pitch);
+    }
+    $result;
+}
+
+sub override_state_transition3 {
+    my ($self, $pitch) = @_;
+    my $result;
+
+    state $fspec = $self->config->filter_spec;
+    if ($fspec->transpositions_configured and
+            $fspec->transposition_specs->{$pitch}) {
+        # A transposition toggle has been invoked - notify subscribers:
+        for my $sub (@{$self->_transposition_subscribers}) {
+            $sub->toggle_transposition($pitch);
         }
-        $result = NORMAL();  # override mode canceled
+        $result = NORMAL();
+    } elsif (%{$fspec->mmc_command} and $fspec->mmc_command->{$pitch}) {
+        $result = MMC();
+    } else {
+say "ost3, fspec->mmc_command: ", Dumper($fspec->mmc_command);
+say "pitch: ", $pitch;
+# !!!%{$fspec->mmc_command} and $fspec->mmc_command->{$pitch}
+        $result = NORMAL();
     }
     $result;
 }
@@ -249,6 +270,7 @@ sub _name_for_state {
         EXTERNAL_CMD()          => 'EXTERNAL_CMD',
         REALTIME()              => 'REALTIME',
         PROGRAM_CHANGE_SAMPLE() => 'PROGRAM_CHANGE_SAMPLE',
+        MMC()                   => 'MMC',
     };
     $name_for->{$s};
 }

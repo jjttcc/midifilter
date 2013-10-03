@@ -113,6 +113,15 @@ has continue_program_change_sample => (
     init_arg => undef,
 );
 
+# Set of MIDI machine control specifications, keyed by pitch:
+# mmc_command->{pitch} => [<cmd-type-tag>, <device-id>]
+has mmc_command => (
+    is       => 'ro',
+    isa      => 'HashRef[ArrayRef]',
+    default  => sub { {} },
+    init_arg => undef,
+);
+
 # Set of configured transposition specifications
 has transposition_specs => (
     is => 'ro',
@@ -208,21 +217,24 @@ sub process {
             }
         } elsif ($line =~ /^([a-z_]+:?)\s*(\d+)\s+(.*)$/) {
             # e.g.: 'external_cmd: 21 echo test'
-            my ($tag, $value, $command) = ($1, $2, $3);
+            my ($tag, $value, $param) = ($1, $2, $3);
             $self->process_numeric_argument_with_parameter($tag, $value,
-                $command, $line);
+                $param, $line);
         }
     }
     @result;
 }
+
+
+#####  Implementation (non-public)
 
 # Set the configuration parameter specified by $tag using the specified
 # numeric value ($value) and parameter ($param).
 sub process_numeric_argument_with_parameter {
     my ($self, $tag, $value, $param, $current_line) = @_;
 
-    my $externals = $self->external_commands;
     if ($tag =~ /external[_-]cmd:?/) {
+        my $externals = $self->external_commands;
         $externals->{$value} = $param;
     } elsif ($tag =~ /transpose[_-]spec:?/) {
         if ($param =~ /(\d+)\S+?(\d+)\s+([+-]?\d+)/) {
@@ -234,6 +246,10 @@ sub process_numeric_argument_with_parameter {
         } else {
             carp "Invalid transpose specification: $current_line";
         }
+    } elsif ($tag =~ /mmc[_-]([[:alpha:]_]+):?/) {
+        my $mmctype = $1;
+say "mmctype: $mmctype";
+        $self->_add_mmc_command($mmctype, $value, $param);
     }
 }
 
@@ -275,6 +291,25 @@ sub process_one_numeric_argument {
     } else {
         carp "Invalid configuration line: $current_line";
     }
+}
+
+sub _add_mmc_command {
+    my ($self, $mmctype, $pitch, $device_id) = @_;
+    my $mmc_tbl = $self->mmc_command;
+    if (not defined $mmc_tbl) {
+        confess "Code defect (__LINE__, __FILE__): mmc_command not defined";
+    }
+    my $type_and_devid = [$mmctype, int($device_id)];
+    $mmc_tbl->{$pitch} = $type_and_devid;
+}
+
+sub _old___add_mmc_command {
+    my ($self, $mmctype, $pitch, $device_id) = @_;
+    my $mmc_tbl = $self->mmc_command;
+    if (not defined $mmc_tbl) {
+        confess "Code defect (__LINE__, __FILE__): mmc_command not defined";
+    }
+    $mmc_tbl->{$mmctype} = [$pitch, $device_id];
 }
 
 1;

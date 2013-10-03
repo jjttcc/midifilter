@@ -13,6 +13,7 @@ use BankSelect_MIDI_Event;
 use ExternalCommand_MIDI_Event;
 use RealTime_MIDI_Event;
 use ProgramChangeSample_MIDI_Event;
+use MMC_MIDI_Event;
 use Carp;
 
 # This module uses Filter::Macro so that its contents will be expanded
@@ -66,6 +67,7 @@ sub BUILD {
     my $external_cmd_event = ExternalCommand_MIDI_Event->new(
         config => $self->config);
     my $realtime_event = RealTime_MIDI_Event->new(config => $self->config);
+    my $mmc_event = MMC_MIDI_Event->new(config => $self->config);
     if (not defined $self->config) { croak "code defect: config not set" }
     my $midimap = $self->_midi_event_map;
     # Initialize _midi_event_map -
@@ -74,11 +76,11 @@ sub BUILD {
     $midimap->{_state_tr(NORMAL(), OVERRIDE())} = undef;            # (no-op)
 # !!!!Note: this state transition may never be seen:
     $midimap->{_state_tr(BANK_SELECT(), NORMAL())} = $regular_event;
-    $midimap->{_state_tr(BANK_SELECT(), OVERRIDE())} = undef;       # (no-op)
     $midimap->{_state_tr(OVERRIDE(), OVERRIDE())} = undef;          # (no-op)
     $midimap->{_state_tr(OVERRIDE(), PROGRAM_CHANGE())} = undef;    # (no-op)
     $midimap->{_state_tr(OVERRIDE(), NORMAL())} = undef;            # (no-op)
     $midimap->{_state_tr(OVERRIDE(), BANK_SELECT())} = $bank_event;
+    $midimap->{_state_tr(OVERRIDE(), MMC())} = $mmc_event;
     $midimap->{_state_tr(OVERRIDE(), PROGRAM_CHANGE_SAMPLE())} =
         $program_change_sample;
     $midimap->{_state_tr(PROGRAM_CHANGE(), NORMAL())} = $program_change_event;
