@@ -80,11 +80,7 @@ sub dispatch {
             state $transpositions =
                 $self->config->filter_spec->transposition_specs;
             my $t = $transpositions->{$key};
-say "t: ", Dumper($t) if $debug;
-say "t: ", $t if $debug;
-say "steps, pitch: ", $t->steps, ", ", $pitch if $debug;
             $pitch += $t->steps;
-say "pitch after: ", $pitch if $debug;
             if ($pitch < 0) {
                 $pitch = 0;     # Negative pitches don't compute.
             } elsif ($pitch > 127) {

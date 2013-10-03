@@ -59,7 +59,7 @@ sub dispatch {
         # Start the new bank at program 0 (first program):
         output(@pgmch);
     }
-    $client->_set_state(NORMAL());
+    $client->set_state(NORMAL());
 }
 
 

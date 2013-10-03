@@ -1,15 +1,15 @@
 # 'to:' indicates an ALSA/MIDI port to send to
 # 'from:' indicates an ALSA/MIDI port to receive from
 from: mia, 0
-to: rosegarden, 0
+to: a2j_bridge, 0
 to: kmidimon, 0
 #to: mia, 0
 program_change_high: 108    # pitch to trigger prog change, adjusted upward
 program_change_low: 107     # pitch to trigger prog change, adjusted downward
 bank_select_up: 106         # pitch to trigger bank-select - increment
 bank_select_down: 105       # pitch to trigger bank-select - decrement
-external_cmd: 21 pkill -STOP -f rosegarden
-external_cmd: 23 pkill -CONT -f rosegarden
+external_cmd: 21 pkill -STOP -f ardour-3.4
+external_cmd: 23 pkill -CONT -f ardour-3.4
 #external_cmd: 21 echo midifilter test succeeded|mutt -s 'midifilter test' me_me_me@gmail.com
 external_cmd: 22 echo midifilter test succeeded at `date`>/tmp/mftest$$
 external_cmd: 72 <terminate>            # Special cmd: terminate midifilter

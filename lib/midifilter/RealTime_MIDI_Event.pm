@@ -43,7 +43,7 @@ sub dispatch {
         # Construct and send the real-time message.
         output($msg_type, undef, undef, undef, undef, undef, $dest, []);
     }
-    $client->_set_state(NORMAL());
+    $client->set_state(NORMAL());
 }
 
 1;

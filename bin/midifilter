@@ -18,7 +18,6 @@ use MIDI_EventStream;
 use AppConfiguration;
 
 my $app = AppConfiguration->new();
-$app->debug();
 my $stream = $app->midi_stream();
 
 $stream->process();

@@ -37,7 +37,7 @@ sub dispatch {
             system($cmd);
         }
     }
-    $client->_set_state(NORMAL());
+    $client->set_state(NORMAL());
 }
 
 

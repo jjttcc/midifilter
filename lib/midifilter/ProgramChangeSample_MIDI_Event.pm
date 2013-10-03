@@ -30,10 +30,10 @@ sub dispatch {
     if (not $can_use_threads) {
         say "Warning: threads are not available, which means the " .
             "program_change_sample\nfeature cannot be used";
-        $client->_set_state(NORMAL());
+        $client->set_state(NORMAL());
         return;
     }
-    $client->_set_state(NORMAL());
+    $client->set_state(NORMAL());
     my $continued = ($stop_program_change_sampling and
         not $self->config->program_change_sample_stopped);
     $cancel_program_change_sampling =

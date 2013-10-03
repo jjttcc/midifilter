@@ -24,14 +24,14 @@ guide for developing one's preferred configuration.
 See "Detailed Documentation," below, for some instructions on how to use this
 application.
 
-## Current Features
+### Current Features
 
 The following events can be triggered and sent to the configured MIDI clients
 (when appropriate):
 
 * program-change - From note event where patch number is determined by the
   pitch value.
-* bank-select
+* bank-select - switch to the next/previous bank.
 * transpositions - Transpose pitches within a certain configured range up or
   down by a specified number of half steps.
 * Trigger external commands.
@@ -42,6 +42,15 @@ The following events can be triggered and sent to the configured MIDI clients
   configured number of seconds, sends patch 1, etc., until it has reached
   patch 127.  This allows the user to try out - "sample" - each patch of
   the current bank without having to explicitly invoke a program change.
+
+### Current Limitations
+
+The bank-select feature is coded to fit the specs of the Yamaha Motif XS
+series of synthesizers.  Obviously, this will not work with other models.
+A scheme for configuring the set of bank-select MSB/LSB combinations
+relevant for a particular model needs to be implemented.  (Anyone with the
+requisite coding skills can, of course, modify the code to work with
+his/her own synth.)
 
 License:  GNU GPL, verson 2
 ===============
@@ -68,7 +77,7 @@ ALSA MIDI Filter only runs on Linux systems
 Detailed Documentation
 ===============
 
-## Introduction
+### Introduction
 
 This section is an attempt (limited by the volunteer/free-software nature of
 the project) to document in some detail what features are available in ALSA
@@ -80,7 +89,7 @@ of this section successful if in the near and far future (i.e., after October
 1, 2013), users' frustration levels are reduced enough that most people are
 reasonably happy with the software.
 
-## General Concepts
+### General Concepts
 
 The midifilter script reads a configuration file, whose name is supplied as an
 argument on the command line, to determine what ALSA MIDI connections to
@@ -117,7 +126,7 @@ a program change to patch 0. (The purpose of these upward or downward
 adjustments is, of course, to make the entire range of patch values of 0..127
 available, since MIDI keyboards generally do not have more than 88 keys.)
 
-## Configuration Tags
+### Configuration Tags
 
 Following is a list of configuration tags that midifilter recognizes when
 it finds them in the specified configuration file, with an accompanying
@@ -176,10 +185,48 @@ description of what each tag does.
   for more details.
 * announcer - Specifies the program to use for "announcements."
 
+#### Special Types of External Commands
+
+*terminate*: Specifies the MIDI pitch that, when in override mode,
+causes midifilter to terminate. Format:  
+`external_cmd: {number} <terminate>`  
+where {number} signifies the midi pitch value (0 .. 127) that will trigger
+the termination. Example:
+
+    external_cmd: 72 <terminate>
+
+*filter-config-report*: Specifies the MIDI pitch that, when in override mode,
+causes midifilter to report (using the "announcer") the current filter
+settings.  Format:  
+`external_cmd: {number} <filter-config-report>`  
+where {number} signifies the midi pitch value (0 .. 127) that will trigger
+the report. Example:
+
+    external_cmd: 88 <filter-config-report>
+
 Feedback
 ===============
 
-I think I am reasonably competent at writing documentation, but far from
-perfect.  If you find a flaw in this documentation, or in the software, for
-that matter, that you think needs correcting, feel free to send me a message
-about the issue via github.
+I am very interested in hearing about whether and how you find midifilter
+useful and in hearing about any feature-requests/enhancements you would like
+to see.  I've only recently started this project and I think there is
+potential for it to become a fully-featured and powerful MIDI filter.  I
+can't guarantee I will be able to honor any particular request due to
+personal time constraints, but I will consider each one, and those requests
+that I feel make good sense and/or will provide very useful functionality
+(and especially those that I am likely to use myself) will have at least a
+reasonably good chance of being implemented.  The best place to make a
+feature request is probably at the github "issues" page for this project:
+https://github.com/jjttcc/midifilter/issues  .
+Alternatively, you can send me an email with your request.  And, of course,
+if you're a programmer, you're free to make your own changes and, if you
+like, submit them on github for consideration into the main branch.
+
+Regarding this docuementation, although I think I am fairly competent at
+writing documentation, I am far from perfect.  If you find a flaw in this
+documentation, or in the software, for that matter, that you think needs
+correcting, feel free to send me a message about the issue via github.
+For any problem that you regard as a bug, the issues page, listed above, is
+an appropriate forum to report it.  I am especially interested in hearing
+about any performance problems encountered - i.e., problems with latency,
+response time, etc.
