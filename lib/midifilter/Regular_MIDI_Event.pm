@@ -7,10 +7,12 @@ use Modern::Perl;
 use Data::Dumper;
 use MIDI_Facilities;
 use constant::boolean;
+use feature qw/state/;
 use Carp;
 
 extends 'MIDI_Event';
 
+state $debug;
 
 #####  Public interface
 
@@ -23,23 +25,32 @@ has status_change_publisher => (
 
 ###  Basic operations
 
+# Utility constant: value indicating that transposition is off for a
+# particular pitch
+sub TRSP_OFF { -1 }
+
 {
-state $transposition_enabled = {};
+state $transposition_status = [];
 
 # Toggle (on/off) the specified transposition specification.
 sub toggle_transposition {
     my ($self, $pitch_value) = @_;
-    my $new_state = FALSE;
+    my $new_value = TRSP_OFF();
     my $spec = $self->config->filter_spec->transposition_specs->{$pitch_value};
     my $first_pitch = $spec->bottom_pitch;
-    if (not $transposition_enabled->{$first_pitch}) {
-        $new_state = TRUE;
+    if ($transposition_status->[$first_pitch] == TRSP_OFF()) {
+        # Toggle: OFF to ON, with $pitch_value as a key:
+        $new_value = $pitch_value;
+    } else {
+        # Toggle: ON to OFF:
+        $new_value = TRSP_OFF();
     }
     my $last_pitch = $spec->top_pitch;
     my $half_steps = $spec->steps;
     for my $p ($first_pitch .. $last_pitch) {
-        $transposition_enabled->{$p} = $new_state;
+        $transposition_status->[$p] = $new_value;
     }
+    say "tt - tstatus: ", Dumper($transposition_status) if $debug;
 }
 
 ###  Basic operations
@@ -64,21 +75,22 @@ sub dispatch {
     if ($transpositions_configured and ($type == $note_on or
             $type == $note_off)) {
         my $pitch = $data->[PITCH()];
-        if ($transposition_enabled->{$pitch}) {
+        if ($transposition_status->[$pitch] != TRSP_OFF()) {
+            my $key = $transposition_status->[$pitch];
             state $transpositions =
                 $self->config->filter_spec->transposition_specs;
-            for my $t (values %{$transpositions}) {
-                if ($pitch >= $t->bottom_pitch and $pitch <= $t->top_pitch) {
-                    $pitch += $t->steps;
-                    if ($pitch < 0) {
-                        $pitch = 0;     # Negative pitches don't compute.
-                    } elsif ($pitch > 127) {
-                        $pitch = 127;   # Must be within range of MIDI spec.
-                    }
-                    $data->[PITCH()] = $pitch;
-                    last;
-                }
+            my $t = $transpositions->{$key};
+say "t: ", Dumper($t) if $debug;
+say "t: ", $t if $debug;
+say "steps, pitch: ", $t->steps, ", ", $pitch if $debug;
+            $pitch += $t->steps;
+say "pitch after: ", $pitch if $debug;
+            if ($pitch < 0) {
+                $pitch = 0;     # Negative pitches don't compute.
+            } elsif ($pitch > 127) {
+                $pitch = 127;   # Must be within range of MIDI spec.
             }
+            $data->[PITCH()] = $pitch;
         }
     }
     for my $dest (@$destinations) {
@@ -87,14 +99,18 @@ sub dispatch {
     }
 }
 
-}
-
 
 #####  Implementation (non-public)
 
 sub BUILD {
     my ($self) = @_;
     $self->status_change_publisher->subscribe($self);
+    for my $pitch (0 .. 127) {
+        $transposition_status->[$pitch] = TRSP_OFF();
+    }
+    $debug = $self->config->debug();
+}
+
 }
 
 1;
