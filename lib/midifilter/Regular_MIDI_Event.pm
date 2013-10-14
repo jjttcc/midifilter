@@ -12,7 +12,6 @@ use Carp;
 
 extends 'MIDI_Event';
 
-state $debug;
 
 #####  Public interface
 
@@ -50,7 +49,7 @@ sub toggle_transposition {
     for my $p ($first_pitch .. $last_pitch) {
         $transposition_status->[$p] = $new_value;
     }
-    say "tt - tstatus: ", Dumper($transposition_status) if $debug;
+    say "tt - tstatus: ", Dumper($transposition_status) if $DEBUG;
 }
 
 ###  Basic operations
@@ -104,7 +103,6 @@ sub BUILD {
     for my $pitch (0 .. 127) {
         $transposition_status->[$pitch] = TRSP_OFF();
     }
-    $debug = $self->config->debug();
 }
 
 }

@@ -1,0 +1,72 @@
+# 'to:' indicates an ALSA/MIDI port to send to
+# 'from:' indicates an ALSA/MIDI port to receive from
+from: j2a_bridge, 0
+from: mia, 0
+to: mia, 0
+#to: a2j_bridge, 0
+program_change_high: 108    # pitch to trigger prog change, adjusted upward
+program_change_low: 107     # pitch to trigger prog change, adjusted downward
+bank_select_up: 106         # pitch to trigger bank-select - increment
+bank_select_down: 105       # pitch to trigger bank-select - decrement
+#external_cmd: 21 pkill -STOP -f ardour-3.4
+#external_cmd: 23 pkill -CONT -f ardour-3.4
+#external_cmd: 21 echo midifilter test succeeded|mutt -s 'midifilter test' me_me_me@gmail.com
+external_cmd: 22 echo midifilter test succeeded at `date`>/tmp/mftest$$
+#!!!external_cmd: 72 <terminate>            # Special cmd: terminate midifilter
+external_cmd: 22 <terminate>            # Special cmd: terminate midifilter
+external_cmd: 88 <filter-config-report> # Special cmd: trigger spec report
+###real_time_start: 33
+###real_time_stop: 34
+###real_time_continue: 35
+# control-change number (decimal) switch to "override" mode:
+override_cc_control_number: 7   # channel volume
+#override_cc_control_number: 64   # sustain pedal
+
+# MIDI note value for the bottom and top keys on the keyboard/device being
+# used
+bottom_note: 21
+top_note: 108
+
+program_change_sample: 98           # tiggers program-change sample mode
+cancel_program_change_sample: 99    # cancels program-change sample mode
+program_change_sample_seconds: 5
+#program_change_sample_seconds: 60   # PC sample: seconds for each patch
+stop_program_change_sample: 100     # stops program-change sample mode
+continue_program_change_sample: 101 # continues program-change sample mode
+
+# begin: MIDI machine control settings
+# format:
+# mmc_<command>: <trigger-pitch> <target-device-id>
+###mmc_play: 52 127    # MMC (deferred) play - triggered by E3, id 127
+###mmc_stop: 54 127    # MMC stop - triggered by Fs3, id 127
+###mmc_rewind: 56 127  # MMC rewind - triggered by Gs3, id 127
+###mmc_record_strobe: 58 127   # MMC record strobe (AKA punch in)
+###mmc_record_exit: 60 127     # MMC record exit (AKA punch out)
+###mmc_record_pause: 62 127    # MMC record pause
+# end: MIDI machine control settings
+
+##### transposition specification #####
+# syntax:
+# transpose_spec: <trigger-pitch> <bottom>..<top> [+-]<half-steps>
+# where:
+#   <trigger-pitch>:    pitch that triggers this transposition
+#   <bottom>..<top>:    range (inclusive) of MIDI pitches to be transposed
+#   [+-]<half-steps>:   number of half-steps: + = up, - = down
+# tips, examples:
+# transpose_spec: 109 21..72 -5 # from A0 to C5: transpose down 5 half-steps
+# transpose_spec: 109 0..127 +4 # for all pitches: transpose up a major 3rd
+# transpose_spec: 110 all +4    # same as above (alternate/convenience syntax)
+# transpose_spec: 110 21..36 -12    # from A0 to C2: transpose down 1 octave
+# Note: To turn transpose mode off, invoke the transpose sequence again
+# (e.g., <override_cc_control_number> 110 [1st time] -> transpose on;
+#        <override_cc_control_number> 110 [2nd time] -> transpose off)
+
+transpose_spec: 68 48..71 +7    # Gs4: transpose C3 to B4 up one fifth
+transpose_spec: 66 21..36 -12   # Fs4: transpose A0 to C2 down one octave
+transpose_spec: 70 97..108 +12  # As4: transpose Cs7 to C8 up one octave
+#transpose_spec: 64 48..71 -3   #  E4: transpose C3 to B4 down minor third
+transpose_spec: 55 21..108 +12  #  G3: transpose all 88 pitches up 1 octave
+transpose_spec: 53 21..108 -12  #  F3: transpose all 88 pitches down 1 octave
+##### (end of transposition specification) #####
+
+announcer: espeak

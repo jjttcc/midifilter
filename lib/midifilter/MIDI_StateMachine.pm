@@ -15,20 +15,6 @@ use MIDI_Facilities;
 
 #####  Public interface
 
-###  Constants
-
-# valid state transitions - hash reference
-my $valid_state_transitions = {
-    NORMAL()                => [OVERRIDE, NORMAL],
-    PROGRAM_CHANGE_SAMPLE() => [NORMAL],
-    REALTIME()              => [OVERRIDE, NORMAL],
-    OVERRIDE()              => [OVERRIDE, PROGRAM_CHANGE, NORMAL, BANK_SELECT,
-                               PROGRAM_CHANGE_SAMPLE, EXTERNAL_CMD, MMC],
-    PROGRAM_CHANGE()        => [PROGRAM_CHANGE, NORMAL, OVERRIDE],
-    EXTERNAL_CMD()          => [OVERRIDE, NORMAL],
-};
-
-
 ###  Access
 
 # Current MIDI-event processing state
@@ -40,7 +26,7 @@ has state => (
     init_arg => undef,   # Not allowed in 'new' method.
 );
 
-# configuration settings - virtual feature
+# Configuration settings - virtual feature
 sub config {
 }
 
@@ -55,17 +41,29 @@ sub dispatch_next_event {
 
     my @alsa_event = input();
     ++$event_count;
+my $event = $self->next_event(\@alsa_event);
+=cut=
     my $state_transition = $self->execute_state_change(\@alsa_event);
-    if ($self->config->debug()) {
+    if ($DEBUG) {
         say STDERR "state_transition: ", human_readable_st($state_transition);
     }
-    my $event = $self->_midi_event_map->{$state_transition};
+    my $event = $self->_midi_event_table->[$state_transition];
+=cut=
     if (defined $event) {
         $event->event_data(\@alsa_event);
         $event->dispatch($self);
     } else {
         # No event for this state transition (i.e., no-op)
     }
+}
+
+sub next_event {
+    my ($self, $alsa_event) = @_;
+    my $state_transition = $self->execute_state_change($alsa_event);
+    if ($DEBUG) {
+        say STDERR "state_transition: ", human_readable_st($state_transition);
+    }
+    $self->_midi_event_table->[$state_transition];
 }
 
 #####  Implementation (non-public)
@@ -77,12 +75,12 @@ sub _transposition_subscribers {
 
 # map of MIDI_Event subtype instances: processing-state -> appropriate subtype
 # (virtual feature)
-sub _midi_event_map {
+sub _midi_event_table {
 }
 
 # Based on the current state and $alsa_event (the last ALSA-MIDI event
 # received), change the state and take any other appropriate actions.
-# Return the resulting state transition, as a string.
+# Return the resulting state transition (integer).
 sub execute_state_change {
     my ($self, $alsa_event) = @_;
 
@@ -104,13 +102,13 @@ sub execute_state_change {
         $new_state = $self->progchange_state_transition($alsa_event,
             $old_state, \$add_to_progch);
     }
-    if ($self->config->debug()) {
+    if ($DEBUG) {
         _check_state_change($old_state, $self->state);
     }
     if ($new_state != $old_state) {
         $self->set_state($new_state);
     }
-    "$old_state->$new_state";
+    $old_state + $to_state_value->[$new_state];
 }
 
 # The new state, transitioned from an original state of OVERRIDE, according
@@ -133,7 +131,7 @@ sub override_state_transition {
     for my $value (keys %$external_commands) {
         $is_extcmd->{$value} = TRUE;
     }
-    state $is_rt;
+    state $is_rt = {};
     $is_rt->{$self->config->filter_spec->realtime_start} = TRUE;
     $is_rt->{$self->config->filter_spec->realtime_stop} = TRUE;
     $is_rt->{$self->config->filter_spec->realtime_continue} = TRUE;
@@ -290,10 +288,8 @@ sub _check_state_change {
 
 # Human-readable state transition - for debugging
 sub human_readable_st {
-    my ($s) = @_;
-    my ($s1, $s2) = split(/->/, $s);
-    my @parts = split(/->/, $s);
-    _name_for_state($s1) . ' -> ' . _name_for_state($s2);
+    my ($state_tr) = @_;
+    $state_tr_name->{$state_tr};
 }
 
 sub _code_defect {

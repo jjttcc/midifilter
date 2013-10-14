@@ -69,31 +69,31 @@ sub BUILD {
     my $realtime_event = RealTime_MIDI_Event->new(config => $self->config);
     my $mmc_event = MMC_MIDI_Event->new(config => $self->config);
     if (not defined $self->config) { croak "code defect: config not set" }
-    my $midimap = $self->_midi_event_map;
-    # Initialize _midi_event_map -
-    # key: state transition description [<state1>-><state2>]
-    $midimap->{_state_tr(NORMAL(), NORMAL())} = $regular_event;
-    $midimap->{_state_tr(NORMAL(), OVERRIDE())} = undef;            # (no-op)
-    $midimap->{_state_tr(OVERRIDE(), OVERRIDE())} = undef;          # (no-op)
-    $midimap->{_state_tr(OVERRIDE(), PROGRAM_CHANGE())} = undef;    # (no-op)
-    $midimap->{_state_tr(OVERRIDE(), NORMAL())} = undef;            # (no-op)
-    $midimap->{_state_tr(OVERRIDE(), BANK_SELECT())} = $bank_event;
-    $midimap->{_state_tr(OVERRIDE(), MMC())} = $mmc_event;
-    $midimap->{_state_tr(OVERRIDE(), PROGRAM_CHANGE_SAMPLE())} =
-        $program_change_sample;
-    $midimap->{_state_tr(PROGRAM_CHANGE(), NORMAL())} = $program_change_event;
-    $midimap->{_state_tr(PROGRAM_CHANGE, OVERRIDE())} = undef;      # (no-op)
-    $midimap->{_state_tr(PROGRAM_CHANGE, PROGRAM_CHANGE())} = undef;# (no-op)
-    $midimap->{_state_tr(OVERRIDE(), EXTERNAL_CMD())} = $external_cmd_event;
-    $midimap->{_state_tr(OVERRIDE(), REALTIME())} = $realtime_event;
+    my $miditable = $self->_midi_event_table;
+
+    # Initialize _midi_event_table -
+    # key: state transition (from-state + to-state)
+    $miditable->[NORMAL_TO_NORMAL()] = $regular_event;
+    $miditable->[NORMAL_TO_OVERRIDE()] = undef;            # (no-op)
+    $miditable->[OVERRIDE_TO_OVERRIDE()] = undef;          # (no-op)
+    $miditable->[OVERRIDE_TO_PROGRAM_CHANGE()] = undef;    # (no-op)
+    $miditable->[OVERRIDE_TO_NORMAL()] = undef;            # (no-op)
+    $miditable->[OVERRIDE_TO_BANK_SELECT()] = $bank_event;
+    $miditable->[PROGRAM_CHANGE_TO_NORMAL()] = $program_change_event;
+    $miditable->[PROGRAM_CHANGE_TO_OVERRIDE()] = undef;      # (no-op)
+    $miditable->[PROGRAM_CHANGE_TO_PROGRAM_CHANGE()] = undef;# (no-op)
+    $miditable->[OVERRIDE_TO_EXTERNAL_CMD()] = $external_cmd_event;
+    $miditable->[OVERRIDE_TO_REALTIME()] = $realtime_event;
+    $miditable->[OVERRIDE_TO_PROGRAM_CHANGE_SAMPLE()] = $program_change_sample;
+    $miditable->[OVERRIDE_TO_MMC()] = $mmc_event;
 }
 
 
 # map of MIDI_Event subtype instances: processing-state -> appropriate subtype
-has _midi_event_map => (
+has _midi_event_table => (
     is      => 'ro',
-    isa     => 'HashRef[MIDI_Event]',
-    default => sub { {} },  # Initialized to empty hash reference.
+    isa     => 'ArrayRef[MIDI_Event]',
+    default => sub { [] },  # Initialized to empty hash reference.
 );
 
 1;

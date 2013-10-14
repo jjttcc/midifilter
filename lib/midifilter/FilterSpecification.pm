@@ -142,6 +142,7 @@ has external_commands => (
 has realtime_start => (
     is       => 'ro',
     isa      => 'Int',
+default => sub { -1 },  #!!!!initialization bug fix - formalize!!!!
     writer   => '_set_realtime_start',
     init_arg => undef,
 );
@@ -150,6 +151,7 @@ has realtime_start => (
 has realtime_stop => (
     is       => 'ro',
     isa      => 'Int',
+default => sub { -1 },  #!!!!initialization bug fix - formalize!!!!
     writer   => '_set_realtime_stop',
     init_arg => undef,
 );
@@ -158,6 +160,7 @@ has realtime_stop => (
 has realtime_continue => (
     is       => 'ro',
     isa      => 'Int',
+default => sub { -1 },  #!!!!initialization bug fix - formalize!!!!
     writer   => '_set_realtime_continue',
     init_arg => undef,
 );

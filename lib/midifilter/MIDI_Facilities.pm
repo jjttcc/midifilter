@@ -3,6 +3,7 @@ package MIDI_Facilities;
 
 use Filter::Macro;  # 'use MIDI_Facilities' provides inline expansion.
 use Modern::Perl;
+use feature 'state';
 
 use MIDI::ALSA qw(
     SND_SEQ_EVENT_PORT_UNSUBSCRIBED
@@ -23,8 +24,12 @@ use MIDI::ALSA qw(
     controllerevent
 );
 
+use MIDI_Configuration;
 
 ###   Constants
+
+state $DEBUG = MIDI_Configuration::debug(); # cached debug status
+
 
 ##  Convenience constants for important MIDI event types for state transition
 sub NOTEON()     { SND_SEQ_EVENT_NOTEON()     }
@@ -70,10 +75,76 @@ sub REALTIME()              { 5 } # MIDI real-time message to be sent
 sub PROGRAM_CHANGE_SAMPLE() { 6 } # Program change to be sent
 sub MMC()                   { 7 } # MIDI machine control
 
+##  Valid state transitions - hash reference
+my $valid_state_transitions = {
+    NORMAL()                => [OVERRIDE, NORMAL],
+    OVERRIDE()              => [OVERRIDE, PROGRAM_CHANGE, NORMAL, BANK_SELECT,
+                               EXTERNAL_CMD, REALTIME, PROGRAM_CHANGE_SAMPLE,
+                               MMC],
+    PROGRAM_CHANGE()        => [PROGRAM_CHANGE, NORMAL, OVERRIDE],
+};
+
+##  Event-filtering processing state-transition from/to components
+##  The value of a state transition is an integer consisting of the sum of the
+##  "from" state and the "to" state.  For example, the
+##  PROGRAM_CHANGE_TO_OVERRIDE (PROGRAM_CHANGE -> OVERRIDE) transition is 5, the
+##  sum of PROGRAM_CHANGE (2) and TO_OVERRIDE (3, defined below).
+##  (Note: No FROM_... constants are defined because they are not needed - the
+##  values of the three states that can function as "from" states in a state
+##  transition (NORMAL, OVERRIDE, PROGRAM_CHANGE - See $valid_state_transitions
+##  and "Event-filtering processing states", above) also function as the "from"
+##  values.)
+sub TO_NORMAL()                  { 0 } # Next event to be output as is
+sub TO_OVERRIDE()                { 3 } # Command override state
+sub TO_PROGRAM_CHANGE()          { 5 } # Program change to be sent
+sub TO_BANK_SELECT()             { 7 } # Bank select to be sent
+sub TO_EXTERNAL_CMD()            { 8 } # External command to be executed
+sub TO_REALTIME()                { 9 } # MIDI real-time message to be sent
+sub TO_PROGRAM_CHANGE_SAMPLE()   { 10 } # Program change to be sent
+sub TO_MMC()                     { 11 } # MIDI machine control
+
+# A map of state constant value (NORMAL, OVERRIDE, ...) to the corresponding
+# TO_... value (e.g., $to_state_value->[REALTIME()] = TO_REALTIME() (9)):
+state $to_state_value = [TO_NORMAL(), TO_OVERRIDE(), TO_PROGRAM_CHANGE(),
+    TO_BANK_SELECT(), TO_EXTERNAL_CMD(), TO_REALTIME(),
+    TO_PROGRAM_CHANGE_SAMPLE(), TO_MMC(),
+];
+
 ##  Keys for "special" "external" commands
 sub TERMINATE_CMD()  { '<terminate>' }      # Request for program termination
 # Request for configured filter-specification report
 sub REPORT_CFG_CMD() { '<filter-config-report>' }
 
+## valid from->to values (sums)
+sub NORMAL_TO_NORMAL                  { 0 }
+sub OVERRIDE_TO_NORMAL                { 1 }
+sub PROGRAM_CHANGE_TO_NORMAL          { 2 }
+sub NORMAL_TO_OVERRIDE                { 3 }
+sub OVERRIDE_TO_OVERRIDE              { 4 }
+sub PROGRAM_CHANGE_TO_OVERRIDE        { 5 }
+sub OVERRIDE_TO_PROGRAM_CHANGE        { 6 }
+sub PROGRAM_CHANGE_TO_PROGRAM_CHANGE  { 7 }
+sub OVERRIDE_TO_BANK_SELECT           { 8 }
+sub OVERRIDE_TO_EXTERNAL_CMD          { 9 }
+sub OVERRIDE_TO_REALTIME              { 10 }
+sub OVERRIDE_TO_PROGRAM_CHANGE_SAMPLE { 11 }
+sub OVERRIDE_TO_MMC                   { 12 }
+
+## For convenience/debugging: state transition names
+state $state_tr_name = {
+	NORMAL_TO_NORMAL()                  => "NORMAL -> NORMAL",
+	OVERRIDE_TO_NORMAL()                => "OVERRIDE -> NORMAL",
+	PROGRAM_CHANGE_TO_NORMAL()          => "PROGRAM_CHANGE -> NORMAL",
+	NORMAL_TO_OVERRIDE()                => "NORMAL -> OVERRIDE",
+	OVERRIDE_TO_OVERRIDE()              => "OVERRIDE -> OVERRIDE",
+	PROGRAM_CHANGE_TO_OVERRIDE()        => "PROGRAM_CHANGE -> OVERRIDE",
+	OVERRIDE_TO_PROGRAM_CHANGE()        => "OVERRIDE -> PROGRAM_CHANGE",
+	PROGRAM_CHANGE_TO_PROGRAM_CHANGE()  => "PROGRAM_CHANGE -> PROGRAM_CHANGE",
+	OVERRIDE_TO_BANK_SELECT()           => "OVERRIDE -> BANK_SELECT",
+	OVERRIDE_TO_EXTERNAL_CMD()          => "OVERRIDE -> EXTERNAL_CMD",
+	OVERRIDE_TO_REALTIME()              => "OVERRIDE -> REALTIME",
+	OVERRIDE_TO_PROGRAM_CHANGE_SAMPLE() => "OVERRIDE -> PROGRAM_CHANGE_SAMPLE",
+	OVERRIDE_TO_MMC()                   => "OVERRIDE -> MMC",
+};
 
 1;
