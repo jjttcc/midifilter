@@ -16,6 +16,7 @@ use TranspositionSpecification;
 has top_note_value => (
     is       => 'ro',
     isa      => 'Int',
+    default  => sub { 96 },
     writer   => '_set_top_note_value',
     init_arg => undef,
 );
@@ -24,6 +25,7 @@ has top_note_value => (
 has bottom_note_value => (
     is       => 'ro',
     isa      => 'Int',
+    default  => sub { 36 },
     writer   => '_set_bottom_note_value',
     init_arg => undef,
 );
@@ -34,6 +36,7 @@ has bottom_note_value => (
 has program_change_high => (
     is       => 'ro',
     isa      => 'Int',
+    default  => sub { -1 },     # (default to 'unset')
     writer   => '_set_program_change_high',
     init_arg => undef,
 );
@@ -44,6 +47,7 @@ has program_change_high => (
 has program_change_low => (
     is       => 'ro',
     isa      => 'Int',
+    default  => sub { -1 },     # (default to 'unset')
     writer   => '_set_program_change_low',
     init_arg => undef,
 );
@@ -53,6 +57,7 @@ has program_change_low => (
 has bank_select_up => (
     is       => 'ro',
     isa      => 'Int',
+    default  => sub { -1 },     # (default to 'unset')
     writer   => '_set_bank_select_up',
     init_arg => undef,
 );
@@ -63,6 +68,7 @@ has bank_select_up => (
 has bank_select_down => (
     is       => 'ro',
     isa      => 'Int',
+    default  => sub { -1 },     # (default to 'unset')
     writer   => '_set_bank_select_down',
     init_arg => undef,
 );
@@ -72,6 +78,7 @@ has bank_select_down => (
 has program_change_sample => (
     is       => 'ro',
     isa      => 'Int',
+    default  => sub { -1 },     # (default to 'unset')
     writer   => '_set_program_change_sample',
     init_arg => undef,
 );
@@ -91,6 +98,7 @@ has program_change_sample_seconds => (
 has cancel_program_change_sample => (
     is       => 'ro',
     isa      => 'Int',
+    default  => sub { -1 },     # (default to 'unset')
     writer   => '_set_cancel_program_change_sample',
     init_arg => undef,
 );
@@ -100,6 +108,7 @@ has cancel_program_change_sample => (
 has stop_program_change_sample => (
     is       => 'ro',
     isa      => 'Int',
+    default  => sub { -1 },     # (default to 'unset')
     writer   => '_set_stop_program_change_sample',
     init_arg => undef,
 );
@@ -109,6 +118,7 @@ has stop_program_change_sample => (
 has continue_program_change_sample => (
     is       => 'ro',
     isa      => 'Int',
+    default  => sub { -1 },     # (default to 'unset')
     writer   => '_set_continue_program_change_sample',
     init_arg => undef,
 );
@@ -142,7 +152,7 @@ has external_commands => (
 has realtime_start => (
     is       => 'ro',
     isa      => 'Int',
-default => sub { -1 },  #!!!!initialization bug fix - formalize!!!!
+    default  => sub { -1 },     # (default to 'unset')
     writer   => '_set_realtime_start',
     init_arg => undef,
 );
@@ -151,7 +161,7 @@ default => sub { -1 },  #!!!!initialization bug fix - formalize!!!!
 has realtime_stop => (
     is       => 'ro',
     isa      => 'Int',
-default => sub { -1 },  #!!!!initialization bug fix - formalize!!!!
+    default  => sub { -1 },     # (default to 'unset')
     writer   => '_set_realtime_stop',
     init_arg => undef,
 );
@@ -160,7 +170,7 @@ default => sub { -1 },  #!!!!initialization bug fix - formalize!!!!
 has realtime_continue => (
     is       => 'ro',
     isa      => 'Int',
-default => sub { -1 },  #!!!!initialization bug fix - formalize!!!!
+    default  => sub { -1 },     # (default to 'unset')
     writer   => '_set_realtime_continue',
     init_arg => undef,
 );
@@ -178,6 +188,8 @@ has override_cc_control_number => (
 has announcer => (
     is       => 'ro',
     writer   => '_set_announcer',
+    # (Use gets a very minimal "announcer" if it is not specified.)
+    default  => sub { Announcer->new(announce_prog => 'cat') },
     init_arg => undef,
 );
 

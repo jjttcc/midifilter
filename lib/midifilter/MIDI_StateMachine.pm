@@ -41,29 +41,17 @@ sub dispatch_next_event {
 
     my @alsa_event = input();
     ++$event_count;
-my $event = $self->next_event(\@alsa_event);
-=cut=
     my $state_transition = $self->execute_state_change(\@alsa_event);
     if ($DEBUG) {
         say STDERR "state_transition: ", human_readable_st($state_transition);
     }
     my $event = $self->_midi_event_table->[$state_transition];
-=cut=
     if (defined $event) {
         $event->event_data(\@alsa_event);
         $event->dispatch($self);
     } else {
         # No event for this state transition (i.e., no-op)
     }
-}
-
-sub next_event {
-    my ($self, $alsa_event) = @_;
-    my $state_transition = $self->execute_state_change($alsa_event);
-    if ($DEBUG) {
-        say STDERR "state_transition: ", human_readable_st($state_transition);
-    }
-    $self->_midi_event_table->[$state_transition];
 }
 
 #####  Implementation (non-public)
