@@ -139,7 +139,8 @@ sub BUILD {
         lc $_
     } reverse MIDI::ALSA::listclients();
     $self->_set_client_number(\%client_number);
-    my $config_lines = _config_lines(\@ARGV);
+    my ($options, $remaining_args) = $self->_options(\@ARGV);
+    my $config_lines = $self->_config_lines($remaining_args);
     if (@$config_lines == 0) {
         carp "Warning: empty filter configuration";
     }
@@ -153,11 +154,14 @@ sub BUILD {
             source_ports => $self->source_ports,
             destination_ports => $self->destination_ports,
             config => $self));
+    for my $o (@$options) {
+        $o->($self);
+    }
 }
 
 # Uncommented lines, lower-cased, from the configuration file(s) (ArrayRef)
 sub _config_lines {
-    my ($files) = @_;
+    my ($self, $files) = @_;
     use IO::File qw();
     my $result = [];
 
@@ -176,11 +180,56 @@ sub _config_lines {
                     undef $file;    # close $file
                 }
             } else {
-                carp "File $f is not readable.";
+                carp "Warning: File $f is not readable.";
             }
+        } else {
+            carp "Warning: $f does not exist or is not a file.";
         }
     }
     $result;
+}
+
+{
+my $devrpt = sub { my ($self) = @_;
+    say "state transitions:\n\n",
+        $self->filter->valid_state_transitions_report();
+};
+
+my $opt_routine_desc_for = {
+    '-h'       => [\&_report_usage, 'display this Help message.'],
+    '-devrpt'  => [ $devrpt, 'display Development-related information.'],
+};
+
+sub _options {
+    my ($self, $args) = @_;
+    my $opt_routines = [];
+
+    my $remaining_args = [];    # $args without the discovered opt-flags
+    for my $a (@$args) {
+        $a =~ s/--+/-/; # substitute single '-' for double...'-'.
+        if (defined $opt_routine_desc_for->{$a}) {
+            push @$opt_routines, $opt_routine_desc_for->{$a}->[0];
+        } else {
+            push @$remaining_args, $a;
+        }
+    }
+    ($opt_routines, $remaining_args);
+}
+
+sub _report_usage {
+    my ($self) = @_;
+    state $gap_size = 10;
+    state $indent = '  ';
+    my $msg = "Usage: " . $self->application_name .
+        " [options] <config-file>\n";
+
+    for my $opt (keys %$opt_routine_desc_for) {
+        $msg .= $indent . $opt . (' ' x ($gap_size - length $opt)) .
+            $opt_routine_desc_for->{$opt}->[1] . "\n";
+    }
+    say $msg;
+    exit 0;
+}
 }
 
 # ALSA source and destination ports (array with two members, each of which is
@@ -212,6 +261,5 @@ sub _alsa_ports {
     }
     @result;
 }
-
 
 1;

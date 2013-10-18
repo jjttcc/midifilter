@@ -147,4 +147,18 @@ state $state_tr_name = {
 	OVERRIDE_TO_MMC()                   => "OVERRIDE -> MMC",
 };
 
+# Formatted report of all valid explicit state transitions - for
+# debugging/development
+sub valid_state_transitions_report {
+    my ($self) = @_;
+    my $result = '';
+    for my $from_state (sort keys %$valid_state_transitions) {
+        for my $to_state (sort @{$valid_state_transitions->{$from_state}}) {
+            $result .= $state_tr_name->{$from_state +
+                $to_state_value->[$to_state]} . "\n";
+        }
+    }
+    $result;
+}
+
 1;
