@@ -75,6 +75,33 @@ Platforms
 ALSA (as far as I know) is only available on Linux.  Therefore, the
 ALSA MIDI Filter only runs on Linux systems
 
+Installation
+===============
+Installation of ALSA MIDI Filter currently requires some manual work,
+but is relatively simple:  Obtain the current files from
+https://github.com/jjttcc/midifilter and cd to the new directory.
+(For example:
+
+    git clone https://github.com/jjttcc/midifilter
+    cd ./midifilter/
+
+.)  Then, from the command line, copy the file bin/midifilter to an
+appropriate directory that is in your path - for example, $HOME/bin or
+/usr/local/bin.  (For example:
+
+    sudo cp bin/midifilter /usr/local/bin/
+    sudo cp -Rapv lib/midifilter/ /usr/local/lib/
+
+)  You can then execute 'midifilter -h' to check the installation - If it
+has been installed correctly you should see a usage message, such as:
+
+    Usage: midifilter [options] <config-file>
+      -h        display this Help message.
+      -devrpt   display Development-related information.
+
+Otherwise, you'll get an error message, such as "...command not found", or
+"Can't locate ...".
+
 Detailed Documentation
 ===============
 
