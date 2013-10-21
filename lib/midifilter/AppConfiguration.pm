@@ -141,9 +141,6 @@ sub BUILD {
     $self->_set_client_number(\%client_number);
     my ($options, $remaining_args) = $self->_options(\@ARGV);
     my $config_lines = $self->_config_lines($remaining_args);
-    if (@$config_lines == 0) {
-        carp "Warning: empty filter configuration";
-    }
     my $fspec = $self->_set_filter_spec(FilterSpecification->new());
     $self->_set_filter(MIDI_EventFilter->new(config => $self));
     $fspec->process($config_lines);
@@ -156,6 +153,9 @@ sub BUILD {
             config => $self));
     for my $o (@$options) {
         $o->($self);
+    }
+    if (@$config_lines == 0) {
+        carp "Warning: empty filter configuration";
     }
 }
 
