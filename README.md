@@ -78,21 +78,28 @@ ALSA MIDI Filter only runs on Linux systems
 Installation
 ===============
 Installation of ALSA MIDI Filter currently requires some manual work,
-but is relatively simple:  Obtain the current files from
-https://github.com/jjttcc/midifilter and cd to the new directory.
+but is relatively simple:  From the command line, obtain the current files
+from https://github.com/jjttcc/midifilter and cd to the new directory.
 (For example:
 
     git clone https://github.com/jjttcc/midifilter
     cd ./midifilter/
 
-.)  Then, from the command line, copy the file bin/midifilter to an
-appropriate directory that is in your path - for example, $HOME/bin or
-/usr/local/bin.  (For example:
+.)  Then copy the file bin/midifilter to an appropriate directory that is in
+your path - for example, $HOME/bin or /usr/local/bin.  Then copy the contents
+of the lib directory to a lib directory at the same relative location as the
+just-copied midifilter file.  (For example:
 
     sudo cp bin/midifilter /usr/local/bin/
     sudo cp -Rapv lib/midifilter/ /usr/local/lib/
 
-)  You can then execute 'midifilter -h' to check the installation - If it
+Alternatively, if your target parent directory is your home directory:
+
+	mkdir $HOME/bin $HOME/lib  # (If they do not yet exist.)
+    cp bin/midifilter $HOME/bin/
+    cp -Rapv lib/midifilter/ $HOME/lib/
+
+.)  You can then execute 'midifilter -h' to check the installation - If it
 has been installed correctly you should see a usage message, such as:
 
     Usage: midifilter [options] <config-file>
