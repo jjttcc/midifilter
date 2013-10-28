@@ -3,7 +3,6 @@
 from: mia, 0
 to: a2j_bridge, 0
 to: kmidimon, 0
-#to: mia, 0
 program_change_high: 108    # pitch to trigger prog change, adjusted upward
 program_change_low: 107     # pitch to trigger prog change, adjusted downward
 bank_select_up: 106         # pitch to trigger bank-select - increment
