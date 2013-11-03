@@ -263,7 +263,7 @@ Alternatively, you can send me an email with your request.  And, of course,
 if you're a programmer, you're free to make your own changes and, if you
 like, submit them on github for consideration into the main branch.
 
-Regarding this docuementation, although I think I am fairly competent at
+Regarding this documentation, although I think I am fairly competent at
 writing documentation, I am far from perfect.  If you find a flaw in this
 documentation, or in the software, for that matter, that you think needs
 correcting, feel free to send me a message about the issue via github.
