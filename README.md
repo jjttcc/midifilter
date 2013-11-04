@@ -1,4 +1,4 @@
-ALSA MIDI Filter
+ALSA MIDI Filter (AMF)
 ===============
 
 A MIDI filter that uses the ALSA MIDI libraries (via the MIDI::ALSA perl
