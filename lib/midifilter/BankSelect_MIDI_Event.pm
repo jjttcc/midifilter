@@ -22,26 +22,6 @@ has bank_select_matrix => (
     required => 1,
 );
 
-=cut=
-gm;0;0
-pre1;63;0
-pre2;63;1
-pre3;63;2
-pre4;63;3
-pre5;63;4
-pre6;63;5
-pre7;63;6
-pre8;63;7
-user1;63;8
-user2;63;9
-user3;63;10
-preset drum;63;32
-user drum;63;40
-user sample;63;50
-mix voice;63;60
-gm drum;127;0
-=cut=
-
 #####  Interface implementation (public)
 
 has _current_bank => (
@@ -107,8 +87,7 @@ sub BANK_NAME() { 0 }
 sub BANK_MSB()  { 1 }
 sub BANK_LSB()  { 2 }
 
-# Next valid bank-select [MSB, LSB] value based on $currbank
-# [Specific to Motif/XS]
+# Increment the current-bank index ($self->_current_bank).
 sub next_bank {
     my ($self) = @_;
     if ($self->_current_bank + 1 >= @{$self->bank_select_matrix}) {
@@ -118,8 +97,7 @@ sub next_bank {
     }
 }
 
-# Next valid bank-select [MSB, LSB] value based on $currbank
-# [Specific to Motif/XS]
+# Decrement the current-bank index ($self->_current_bank).
 sub previous_bank {
     my ($self) = @_;
     if ($self->_current_bank == 0) {
@@ -129,65 +107,5 @@ sub previous_bank {
     }
 }
 
-# Next valid bank-select [MSB, LSB] value based on $currbank
-# [Specific to Motif/XS]
-sub old_next_bank {
-    my ($currbank) = @_;
-    my $result = [];
-    my ($msb, $lsb) = @$currbank;
-    # For Motif/XS - only used bank-select MSB of 0, 63, or 127.
-    if ($msb == 0) {
-            $result = [63, 0]; # Pre1
-    } elsif ($msb == 63) {
-        if ($lsb >= 0 and $lsb <= 9) {
-            $result = [$msb, $lsb + 1];
-        } elsif ($lsb == 10) {
-            $result = [$msb, 32];
-        } elsif ($lsb == 32) {
-            $result = [$msb, 40];
-        } elsif ($lsb == 40) {
-            $result = [$msb, 50];
-        } elsif ($lsb == 50) {
-            $result = [$msb, 60];
-        } elsif ($lsb == 60) {
-            $result = [127, 0]; # GM drum
-        }
-    } elsif ($msb == 127) {
-            $result = [0, 0]; # GM
-    } else {
-        croak "Fatal error: code defect [line " . __LINE__ . ']';
-    }
-    $result;
-}
-# Previous valid bank-select [MSB, LSB] value based on $currbank
-# [Specific to Motif/XS]
-sub old_previous_bank {
-    my ($currbank) = @_;
-    my $result = [];
-    my ($msb, $lsb) = @$currbank;
-    # For Motif/XS - only used bank-select MSB of 0, 63, or 127.
-    if ($msb == 0) {
-        $result = [127, 0];     # GM drum
-    } elsif ($msb == 63) {
-        if ($lsb == 0) {
-            $result = [0, 0];   # GM
-        } elsif ($lsb >= 1 and $lsb <= 10) {
-            $result = [$msb, $lsb - 1];
-        } elsif ($lsb == 32) {
-            $result = [$msb, 10];
-        } elsif ($lsb == 40) {
-            $result = [$msb, 32];
-        } elsif ($lsb == 50) {
-            $result = [$msb, 40];
-        } elsif ($lsb == 60) {
-            $result = [$msb, 50];
-        }
-    } elsif ($msb == 127) {
-        $result = [63, 60]; # Mix voice
-    } else {
-        croak "Fatal error: code defect [line " . __LINE__ . ']';
-    }
-    $result;
-}
 
 1;

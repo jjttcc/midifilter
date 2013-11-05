@@ -260,7 +260,7 @@ sub BUILD {
     my ($self) = @_;
 }
 
-# !!!!!Need descr.
+# Find and process the bank-select table settings.
 sub process_bank_select_spec {
     my ($self, $lines, $i) = @_;
 
@@ -272,7 +272,7 @@ sub process_bank_select_spec {
     ++$i;
     while ($i < @$lines and $lines->[$i] !~ /bank.select.end/) {
         my $line = $lines->[$i];
-        if ($line =~ /^$/) { next }
+        if ($line =~ /^$/) { next }     # Skip empty line.
         my $parts = [split /[;.,]/, $line];
         if (@$parts < 3) {
             say "Warning: invalid bank select spec: $line";

@@ -69,4 +69,33 @@ transpose_spec: 55 21..108 +12  #  G3: transpose all 88 pitches up 1 octave
 transpose_spec: 53 21..108 -12  #  F3: transpose all 88 pitches down 1 octave
 ##### (end of transposition specification) #####
 
+# bank-select table for a Motif XS synthesizer. bank_select_start and
+# bank_select_end, of course, start the bank-select table definition. In
+# between, each line specifies 3 values: The name of the bank represented by
+# that specification, the most significant bit (MSB), and the least
+# significant bit (LSB), with the fields separated by a semi-colon (or,
+# optionally, a comma or a period).
+bank_select_start
+GM;0;0
+# preset banks
+Pre1;63;0
+Pre2;63;1
+Pre3;63;2
+Pre4;63;3
+Pre5;63;4
+Pre6.63.5
+Pre7;63;6
+Pre8;63;7
+# user banks
+User1,63,8
+User2;63;9
+User3;63;10
+# etc.
+Preset Drum;63;32
+User Drum;63;40
+User Sample;63;50
+Mix Voice;63;60
+GM Drum;127;0
+bank_select_end
+
 announcer: espeak
