@@ -31,7 +31,7 @@ configured MIDI clients:
 
 * program-change - From note event where patch number is determined by the
   pitch value.
-* bank-select - switch to the next/previous bank.
+* configurable bank-select - switch to the next/previous bank.
 * transpositions - Transpose pitches within a certain configured range up or
   down by a specified number of half steps.
 * External commands.
@@ -43,15 +43,6 @@ configured MIDI clients:
   configured number of seconds, sends patch 1, etc., until it has reached
   patch 127.  This allows the user to try out - "sample" - each patch of
   the current bank without having to explicitly invoke a program change.
-
-### Current Limitations
-
-The bank-select feature is coded to fit the specs of the Yamaha Motif XS
-series of synthesizers.  Obviously, this will not work with other models.
-A scheme for configuring the set of bank-select MSB/LSB combinations
-relevant for a particular model needs to be implemented.  (Anyone with the
-requisite coding skills can, of course, modify the code to work with
-his/her own synth.)
 
 License:  GNU GPL, verson 2
 ===============
