@@ -14,14 +14,48 @@ use Announcer;
 
 extends 'MIDI_Event';
 
+#####  Public interface
+
+has bank_select_matrix => (
+    is => 'ro',
+    isa => 'ArrayRef[ArrayRef]',
+    required => 1,
+);
+
+=cut=
+gm;0;0
+pre1;63;0
+pre2;63;1
+pre3;63;2
+pre4;63;3
+pre5;63;4
+pre6;63;5
+pre7;63;6
+pre8;63;7
+user1;63;8
+user2;63;9
+user3;63;10
+preset drum;63;32
+user drum;63;40
+user sample;63;50
+mix voice;63;60
+gm drum;127;0
+=cut=
 
 #####  Interface implementation (public)
+
+has _current_bank => (
+    is      => 'ro',
+    isa     => 'Int',
+    default => 0,
+    writer  => '_set_current_bank',
+);
 
 sub dispatch {
     my ($self, $client) = @_;
 
-    state $current_bank = [0, 0];
     state $program1 = 0;
+    state $matrix = $self->bank_select_matrix;
     # (Optimization: set @destinations only once:)
     state $destinations = $self->config->destination_ports;
     # myself -> source for output calls - not expected to change:
@@ -35,11 +69,14 @@ sub dispatch {
         @{$self->event_data};
     my ($channel, $pitch) = @$data;
     if ($pitch == $bank_select_down) {
-        $current_bank = previous_bank($current_bank);
+        $self->previous_bank();
     } else {
-        $current_bank = next_bank($current_bank);
+        $self->next_bank();
     }
-    my ($msb, $lsb) = @$current_bank;
+    my $bank_idx = $self->_current_bank;
+    my $bank_column = $matrix->[$self->_current_bank];
+    my ($msb, $lsb) = @{$bank_column}[BANK_MSB(), BANK_LSB()];
+    $self->_current_bank;
     $announcer->announce("Bank $msb, $lsb");
     for my $dest (@$destinations) {
         # Construct and send the MSB message.
@@ -65,9 +102,36 @@ sub dispatch {
 
 #####  Implementation (non-public)
 
+# Bank-select indexes
+sub BANK_NAME() { 0 }
+sub BANK_MSB()  { 1 }
+sub BANK_LSB()  { 2 }
+
 # Next valid bank-select [MSB, LSB] value based on $currbank
 # [Specific to Motif/XS]
 sub next_bank {
+    my ($self) = @_;
+    if ($self->_current_bank + 1 >= @{$self->bank_select_matrix}) {
+        $self->_set_current_bank(0);
+    } else {
+        $self->_set_current_bank($self->_current_bank + 1);
+    }
+}
+
+# Next valid bank-select [MSB, LSB] value based on $currbank
+# [Specific to Motif/XS]
+sub previous_bank {
+    my ($self) = @_;
+    if ($self->_current_bank == 0) {
+        $self->_set_current_bank(@{$self->bank_select_matrix} - 1);
+    } else {
+        $self->_set_current_bank($self->_current_bank - 1);
+    }
+}
+
+# Next valid bank-select [MSB, LSB] value based on $currbank
+# [Specific to Motif/XS]
+sub old_next_bank {
     my ($currbank) = @_;
     my $result = [];
     my ($msb, $lsb) = @$currbank;
@@ -95,10 +159,9 @@ sub next_bank {
     }
     $result;
 }
-
 # Previous valid bank-select [MSB, LSB] value based on $currbank
 # [Specific to Motif/XS]
-sub previous_bank {
+sub old_previous_bank {
     my ($currbank) = @_;
     my $result = [];
     my ($msb, $lsb) = @$currbank;

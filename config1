@@ -57,4 +57,25 @@ transpose_spec: 55 21..108 +12  #  G3: transpose all 88 pitches up 1 octave
 transpose_spec: 53 21..108 -12  #  F3: transpose all 88 pitches down 1 octave
 ##### (end of transposition specification) #####
 
+bank_select_start
+GM;0;0
+Pre1;63;0
+Pre2;63;1
+Pre3;63;2
+Pre4;63;3
+Pre5;63;4
+Pre6.63.5
+Pre7;63;6
+#TESTMEDUDE
+Pre8;63;7
+User1,63,8
+User2;63;9
+User3;63;10
+Preset Drum;63;32
+User Drum;63;40
+User Sample;63;50
+Mix Voice;63;60
+GM Drum;127;0
+bank_select_end
+
 announcer: espeak

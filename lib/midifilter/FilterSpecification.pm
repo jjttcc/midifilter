@@ -193,6 +193,13 @@ has announcer => (
     init_arg => undef,
 );
 
+has bank_select_matrix => (
+    is       => 'ro',
+    isa      => 'ArrayRef[ArrayRef]',
+    writer   => '_set_bank_select_matrix',
+    init_arg => undef,
+);
+
 sub non_pitch_spec {
     {
         'override_cc_control_number'    => TRUE,
@@ -219,8 +226,13 @@ sub process {
     if (not defined $lines) { croak "process: argument 'lines' not valid"; }
     my @result = ([], []);
 
-    for my $line (@$lines) {
-        if ($line =~ /^([a-z_]+:?)\s*(\d+)\s*$/) {
+    my $i = 0;
+    $self->_set_bank_select_matrix([]);
+    while ($i < @$lines) {
+        my $line = $lines->[$i];
+        if ($line =~ /bank.select.start/) {
+            $i = $self->process_bank_select_spec($lines, $i);
+        } elsif ($line =~ /^([a-z_]+:?)\s*(\d+)\s*$/) {
             # e.g.: 'real_time_stop: 34'
             my ($tag, $value) = ($1, $2);
             $self->process_one_numeric_argument($tag, $value, $line);
@@ -236,12 +248,42 @@ sub process {
             $self->process_numeric_argument_with_parameter($tag, $value,
                 $param, $line);
         }
+        ++$i;
     }
     @result;
 }
 
 
 #####  Implementation (non-public)
+
+sub BUILD {
+    my ($self) = @_;
+}
+
+# !!!!!Need descr.
+sub process_bank_select_spec {
+    my ($self, $lines, $i) = @_;
+
+    my $matrix = $self->bank_select_matrix;
+    if (not defined $matrix) {
+        $matrix = [];
+        $self->bank_select_matrix($matrix);
+    }
+    ++$i;
+    while ($i < @$lines and $lines->[$i] !~ /bank.select.end/) {
+        my $line = $lines->[$i];
+        if ($line =~ /^$/) { next }
+        my $parts = [split /[;.,]/, $line];
+        if (@$parts < 3) {
+            say "Warning: invalid bank select spec: $line";
+            next;
+        }
+        push @$matrix, $parts;
+    } continue {
+            ++$i;
+    }
+    $i;
+}
 
 # Set the configuration parameter specified by $tag using the specified
 # numeric value ($value) and parameter ($param).

@@ -59,7 +59,8 @@ sub BUILD {
 
     my $regular_event = Regular_MIDI_Event->new(config => $self->config,
         status_change_publisher => $self);
-    my $bank_event = BankSelect_MIDI_Event->new(config => $self->config);
+    my $bank_event = BankSelect_MIDI_Event->new(config => $self->config,
+        bank_select_matrix => $self->config->filter_spec->bank_select_matrix);
     my $program_change_sample = ProgramChangeSample_MIDI_Event->new(
         config => $self->config);
     my $program_change_event = ProgramChange_MIDI_Event->new(

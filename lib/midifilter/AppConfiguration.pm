@@ -142,8 +142,8 @@ sub BUILD {
     my ($options, $remaining_args) = $self->_options(\@ARGV);
     my $config_lines = $self->_config_lines($remaining_args);
     my $fspec = $self->_set_filter_spec(FilterSpecification->new());
-    $self->_set_filter(MIDI_EventFilter->new(config => $self));
     $fspec->process($config_lines);
+    $self->_set_filter(MIDI_EventFilter->new(config => $self));
     my ($sources, $dests) = $self->_alsa_ports($config_lines);
     $self->_set_source_ports($sources);
     $self->_set_destination_ports($dests);
