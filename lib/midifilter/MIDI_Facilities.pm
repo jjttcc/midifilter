@@ -132,20 +132,20 @@ sub OVERRIDE_TO_MMC                   { 12 }
 
 ## For convenience/debugging: state transition names
 state $state_tr_name = {
-	NORMAL_TO_NORMAL()                  => "NORMAL -> NORMAL",
-	OVERRIDE_TO_NORMAL()                => "OVERRIDE -> NORMAL",
-	PROGRAM_CHANGE_TO_NORMAL()          => "PROGRAM_CHANGE -> NORMAL",
-	NORMAL_TO_OVERRIDE()                => "NORMAL -> OVERRIDE",
-	OVERRIDE_TO_OVERRIDE()              => "OVERRIDE -> OVERRIDE",
-	PROGRAM_CHANGE_TO_OVERRIDE()        => "PROGRAM_CHANGE -> OVERRIDE",
-	OVERRIDE_TO_PROGRAM_CHANGE()        => "OVERRIDE -> PROGRAM_CHANGE",
-	PROGRAM_CHANGE_TO_PROGRAM_CHANGE()  => "PROGRAM_CHANGE -> PROGRAM_CHANGE",
-	OVERRIDE_TO_BANK_SELECT()           => "OVERRIDE -> BANK_SELECT",
-	OVERRIDE_TO_EXTERNAL_CMD()          => "OVERRIDE -> EXTERNAL_CMD",
-	OVERRIDE_TO_REALTIME()              => "OVERRIDE -> REALTIME",
-	OVERRIDE_TO_PROGRAM_CHANGE_SAMPLE() => "OVERRIDE -> PROGRAM_CHANGE_SAMPLE",
-	OVERRIDE_TO_MMC()                   => "OVERRIDE -> MMC",
-};
+    NORMAL_TO_NORMAL()                  => "NORMAL -> NORMAL",
+    OVERRIDE_TO_NORMAL()                => "OVERRIDE -> NORMAL",
+    PROGRAM_CHANGE_TO_NORMAL()          => "PROGRAM_CHANGE -> NORMAL",
+    NORMAL_TO_OVERRIDE()                => "NORMAL -> OVERRIDE",
+    OVERRIDE_TO_OVERRIDE()              => "OVERRIDE -> OVERRIDE",
+    PROGRAM_CHANGE_TO_OVERRIDE()        => "PROGRAM_CHANGE -> OVERRIDE",
+    OVERRIDE_TO_PROGRAM_CHANGE()        => "OVERRIDE -> PROGRAM_CHANGE",
+    PROGRAM_CHANGE_TO_PROGRAM_CHANGE()  => "PROGRAM_CHANGE -> PROGRAM_CHANGE",
+    OVERRIDE_TO_BANK_SELECT()           => "OVERRIDE -> BANK_SELECT",
+    OVERRIDE_TO_EXTERNAL_CMD()          => "OVERRIDE -> EXTERNAL_CMD",
+    OVERRIDE_TO_REALTIME()              => "OVERRIDE -> REALTIME",
+    OVERRIDE_TO_PROGRAM_CHANGE_SAMPLE() => "OVERRIDE -> PROGRAM_CHANGE_SAMPLE",
+    OVERRIDE_TO_MMC()                   => "OVERRIDE -> MMC",
+    };
 
 # Formatted report of all valid explicit state transitions - for
 # debugging/development

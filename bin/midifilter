@@ -9,9 +9,9 @@ use Data::Dumper;
 use Carp;
 
 BEGIN {
-	my $progpath = dirname($0);
-	push @INC, "$progpath/../lib";
-	push @INC, "$progpath/../lib/midifilter";
+    my $progpath = dirname($0);
+    push @INC, "$progpath/../lib";
+    push @INC, "$progpath/../lib/midifilter";
 }
 
 use MIDI_EventStream;
