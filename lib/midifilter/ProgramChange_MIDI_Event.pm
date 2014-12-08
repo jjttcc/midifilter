@@ -31,6 +31,11 @@ sub dispatch {
     my ($channel, $pitch) = @$data;
     # ($pitch becomes an alias for program/patch number.)
 
+    if ($pitch < 0) {
+        say STDERR "patch # (pitch), $pitch, is negative - adjusting to 0\n" .
+            "[check bottom_note setting]";
+        $pitch = 0;
+    }
     my $instrument = $instrument_name_for->{$pitch};
     $announcer->announce("$pitch: $instrument");
     for my $dest (@{$destinations}) {
