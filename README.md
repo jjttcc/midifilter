@@ -38,11 +38,15 @@ configured MIDI clients:
 * Real-time START, STOP, and CONTINUE messages.
 * MIDI machine control messages.
 * Trigger a mode (which I call "program-change sample mode") in which
-  midifilter cycles through the entire range of patches, with a pause in
-  between each patch.  In other words, it sends patch 0, pauses for a
-  configured number of seconds, sends patch 1, etc., until it has reached
-  patch 127.  This allows the user to try out - "sample" - each patch of
-  the current bank without having to explicitly invoke a program change.
+  midifilter cycles sequentially through a range of patches, with a pause
+  in between each patch.  In other words, it sends an initial patch number
+  (0, if no patch has been explicitly set via a program-change event -
+  otherwise, the value of the last patch explicitly set plus one) pauses for
+  a configured number of seconds, triggers the next sequential patch (e.g.,
+  starts at patch 10, pauses, then triggers patch 11), etc., until it has
+  reached patch 127.  This allows the user to try out - "sample" - each patch
+  of the current bank without having to manually invoke the needed program
+  changes.
 
 License:  GNU GPL, verson 2
 ===============
@@ -86,7 +90,7 @@ just-copied midifilter file.  (For example:
 
 Alternatively, if your target parent directory is your home directory:
 
-	mkdir $HOME/bin $HOME/lib  # (If they do not yet exist.)
+    mkdir $HOME/bin $HOME/lib  # (If they do not yet exist.)
     cp bin/midifilter $HOME/bin/
     cp -Rapv lib/midifilter/ $HOME/lib/
 
@@ -211,7 +215,7 @@ description of what each tag does.
 * stop\_program\_change\_sample - Specifies the MIDI pitch value that (when
   in "override" mode) stops "program-change sample" mode.
 * continue\_program\_change\_sample - Specifies the MIDI pitch value that
-  (when in "override" mode), if program-change sampe mode has been stopped,
+  (when in "override" mode), if program-change sample mode has been stopped,
   resumes - restarts it.
 * transpose\_spec - Specification of a transposition.  See documentation below
   for more details.

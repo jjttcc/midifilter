@@ -75,7 +75,17 @@ sub handle_program_change_mode {
     state $announcer = $self->config->filter_spec->announcer;
     my $filter_spec = $self->config->filter_spec;
     my $sleep_seconds = $filter_spec->program_change_sample_seconds;
-    my $current_program = 0;
+    my $current_program = $self->config->last_patch_number;
+    if (not defined $current_program or $current_program == 127) {
+        $current_program = 0;
+    } elsif ($current_program > 0) {
+        # (Assume that any patch > 0 implies that the user has already had
+        # plenty of time to try out that patch and wants the PC sample
+        # progression to start at the next patch; and assume that patch == 0
+        # implies that the user wants to start at the beginning - the 1st
+        # patch - i.e., don't change it if it's 0.)
+        ++$current_program;
+    }
     my $sampling_seconds = $filter_spec->program_change_sample_seconds;
     my $destinations = $self->config->destination_ports;
     # myself -> source for output calls - not expected to change:

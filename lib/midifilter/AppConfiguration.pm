@@ -18,6 +18,14 @@ extends 'MIDI_Configuration';
 
 ###  Access
 
+# The [0..127] value for the last program/patch-change request
+has last_patch_number => (
+    is      => 'rw',
+    isa     => 'Int',
+    writer  => 'set_last_patch_number',
+    init_arg => undef,  # not to be supplied in 'new'
+);
+
 # MIDI event stream
 has midi_stream => (
     is      => 'ro',

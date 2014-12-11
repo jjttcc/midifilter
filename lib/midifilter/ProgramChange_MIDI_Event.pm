@@ -36,6 +36,7 @@ sub dispatch {
             "[check bottom_note setting]";
         $pitch = 0;
     }
+    $self->config->set_last_patch_number($pitch);
     my $instrument = $instrument_name_for->{$pitch};
     $announcer->announce("$pitch: $instrument");
     for my $dest (@{$destinations}) {
